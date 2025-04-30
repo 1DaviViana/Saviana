@@ -53,6 +53,7 @@ declare namespace google {
       mapTypeId?: string;
       disableDefaultUI?: boolean;
       zoomControl?: boolean;
+      zoomControlOptions?: ZoomControlOptions;
       mapTypeControl?: boolean;
       scaleControl?: boolean;
       streetViewControl?: boolean;
@@ -60,6 +61,10 @@ declare namespace google {
       fullscreenControl?: boolean;
       styles?: any[];
       gestureHandling?: string;
+    }
+    
+    interface ZoomControlOptions {
+      position?: number;
     }
 
     interface MarkerOptions {
