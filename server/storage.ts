@@ -60,7 +60,13 @@ export class MemStorage implements IStorage {
   
   async createSearchQuery(insertQuery: InsertSearchQuery): Promise<SearchQuery> {
     const id = this.queryCurrentId++;
-    const query: SearchQuery = { ...insertQuery, id };
+    const query: SearchQuery = { 
+      ...insertQuery, 
+      id,
+      userResponse: insertQuery.userResponse ?? null,
+      refinedQuery: insertQuery.refinedQuery ?? null,
+      clarificationQuestion: insertQuery.clarificationQuestion ?? null
+    };
     this.queries.set(id, query);
     return query;
   }
@@ -74,7 +80,22 @@ export class MemStorage implements IStorage {
   
   async createSearchResult(insertResult: InsertSearchResult): Promise<SearchResult> {
     const id = this.resultCurrentId++;
-    const result: SearchResult = { ...insertResult, id };
+    // Precisamos remover o ...insertResult para evitar que valores undefined sejam incluídos
+    const result: SearchResult = { 
+      id,
+      queryId: insertResult.queryId,
+      name: insertResult.name,
+      category: insertResult.category,
+      address: insertResult.address ?? null,
+      location: insertResult.location ?? null,
+      website: insertResult.website ?? null,
+      rating: insertResult.rating ?? null,
+      reviews: insertResult.reviews ?? null,
+      distance: insertResult.distance ?? null,
+      price: insertResult.price ?? null,
+      hasProduct: insertResult.hasProduct ?? true,
+      metadata: insertResult.metadata ?? null
+    };
     this.results.set(id, result);
     return result;
   }

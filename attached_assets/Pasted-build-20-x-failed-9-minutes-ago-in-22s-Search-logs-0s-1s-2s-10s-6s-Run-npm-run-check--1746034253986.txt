@@ -1,0 +1,33 @@
+build (20.x)
+failed 9 minutes ago in 22s
+Search logs
+0s
+1s
+2s
+10s
+6s
+Run npm run check
+
+> rest-express@1.0.0 check
+> tsc
+
+Error: client/src/components/GoogleMap.tsx(35,34): error TS2503: Cannot find namespace 'google'.
+Error: client/src/components/GoogleMap.tsx(36,42): error TS2503: Cannot find namespace 'google'.
+Error: client/src/components/GoogleMap.tsx(78,27): error TS2304: Cannot find name 'google'.
+Error: client/src/components/GoogleMap.tsx(89,23): error TS2304: Cannot find name 'google'.
+Error: client/src/components/GoogleMap.tsx(96,26): error TS2304: Cannot find name 'google'.
+Error: client/src/components/GoogleMap.tsx(107,28): error TS2304: Cannot find name 'google'.
+Error: client/src/components/GoogleMap.tsx(111,22): error TS2304: Cannot find name 'google'.
+Error: client/src/components/GoogleMap.tsx(114,32): error TS2304: Cannot find name 'google'.
+Error: server/storage.ts(63,11): error TS2322: Type '{ id: number; query: string; timestamp: string; userResponse?: string | null | undefined; refinedQuery?: string | null | undefined; clarificationQuestion?: string | null | undefined; }' is not assignable to type '{ id: number; query: string; userResponse: string | null; refinedQuery: string | null; clarificationQuestion: string | null; timestamp: string; }'.
+  Types of property 'userResponse' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+Error: server/storage.ts(77,11): error TS2322: Type '{ id: number; name: string; queryId: number; category: string; address?: string | null | undefined; metadata?: [any, ...any[]] | null | undefined; location?: { lat: number; lng: number; } | null | undefined; ... 5 more ...; hasProduct?: boolean | ... 1 more ... | undefined; }' is not assignable to type '{ address: string | null; metadata: any; id: number; name: string; location: { lat: number; lng: number; } | null; queryId: number; category: string; website: string | null; rating: string | null; reviews: string | null; distance: string | null; price: string | null; hasProduct: boolean | null; }'.
+  Types of property 'address' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+Error: server/vite.ts(39,5): error TS2322: Type '{ middlewareMode: boolean; hmr: { server: Server<typeof IncomingMessage, typeof ServerResponse>; }; allowedHosts: boolean; }' is not assignable to type 'ServerOptions'.
+  Types of property 'allowedHosts' are incompatible.
+    Type 'boolean' is not assignable to type 'true | string[] | undefined'.
+Error: Process completed with exit code 2.
