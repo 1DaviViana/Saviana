@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=*, camera=(), microphone=()" />
+    <meta http-equiv="Feature-Policy" content="geolocation *" />
+    <!-- Meta tags específicas para iframes e permissões -->
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
+    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    
+    <!-- Script para tentar melhorar suporte a geolocalização em iframes -->
+    <script>
+      // Tenta modificar o iframe pai para permitir geolocalização
+      try {
+        if (window.self !== window.top) {
+          console.debug('[DEBUG] Tentando adicionar permissão de geolocalização ao iframe...');
+          
+          // Função para enviar mensagem ao documento pai
+          const requestGeolocationPermission = () => {
+            window.parent.postMessage({
+              type: 'REQUEST_GEOLOCATION_PERMISSION',
+              origin: window.location.origin
+            }, '*');
+            
+            console.debug('[DEBUG] Enviada solicitação de permissão ao documento pai');
+          };
+          
+          // Tenta modificar o iframe depois que a página carregar
+          window.addEventListener('load', () => {
+            requestGeolocationPermission();
+          });
+        }
+      } catch (e) {
+        console.debug('[DEBUG] Erro ao tentar modificar permissões do iframe:', e);
+      }
+    </script>
+  </body>
+</html>
