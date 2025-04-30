@@ -1,3 +1,6 @@
+/// <reference types="@types/google.maps" />
+
+
 import { useState, useEffect } from "react";
 import { SearchResult } from "@shared/schema";
 import { MapPin } from "@/components/ui/map-pin";
