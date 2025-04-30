@@ -4,7 +4,7 @@ import path from "path";
 import {
   createServer as createViteServer,
   createLogger,
-  type ServerOptions,
+  type ServerOptions,      // <-- importa o tipo
 } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
@@ -24,11 +24,11 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
-  // Tipagem explícita para ServerOptions
+  // <-- anota explicitamente como ServerOptions
   const serverOptions: ServerOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: true, // agora aceito como literal `true`
+    allowedHosts: true,    // agora é reconhecido como o literal `true`
   };
 
   const vite = await createViteServer({
@@ -41,7 +41,7 @@ export async function setupVite(app: Express, server: Server) {
         process.exit(1);
       },
     },
-    server: serverOptions,
+    server: serverOptions,  // usa a variável já tipada
     appType: "custom",
   });
 
@@ -57,7 +57,6 @@ export async function setupVite(app: Express, server: Server) {
         "index.html",
       );
 
-      // sempre recarrega o index.html do disco
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
@@ -83,7 +82,6 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fallback para index.html
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
