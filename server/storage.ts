@@ -80,7 +80,8 @@ export class MemStorage implements IStorage {
   
   async createSearchResult(insertResult: InsertSearchResult): Promise<SearchResult> {
     const id = this.resultCurrentId++;
-    // Definimos cada campo explicitamente com valores padrão quando necessário
+    
+    // Ensure all properties that might be undefined are converted to null
     const result: SearchResult = { 
       id,
       queryId: insertResult.queryId,
@@ -93,9 +94,8 @@ export class MemStorage implements IStorage {
       reviews: insertResult.reviews ?? null,
       distance: insertResult.distance ?? null,
       price: insertResult.price ?? null,
-      // Aqui convertemos undefined para o valor padrão true
-      // O valor original poderia ser boolean, undefined, ou null
-      hasProduct: insertResult.hasProduct === undefined ? true : insertResult.hasProduct,
+      // Convert undefined or falsy value to true (default) or null
+      hasProduct: insertResult.hasProduct ?? true,
       metadata: insertResult.metadata ?? null
     };
     this.results.set(id, result);
