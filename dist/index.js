@@ -835,7 +835,7 @@ var isProduction = process.env.NODE_ENV === "production";
 var isReplit = process.env.REPL_ID !== void 0;
 var vite_config_default = defineConfig(async () => ({
   base: "/Saviana/",
-  // Necessário para GitHub Pages funcionar
+  // Caminho correto para GitHub Pages
   plugins: [
     react(),
     runtimeErrorOverlay(),
