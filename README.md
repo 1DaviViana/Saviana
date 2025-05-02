@@ -62,4 +62,4 @@ An intelligent location-based search engine that provides robust geolocation cap
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.# trigger deploy
