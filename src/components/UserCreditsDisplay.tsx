@@ -1,7 +1,7 @@
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Badge } from "./ui/badge";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
 import { 
   UserCircle, 
   LogIn, 
@@ -13,7 +13,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "./ui/dropdown-menu";
 
 interface UserCreditsDisplayProps {
   credits: number;

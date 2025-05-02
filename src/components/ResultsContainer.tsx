@@ -1,9 +1,10 @@
-import { SearchResponse } from "@shared/schema";
-import { Card, CardContent } from "@/components/ui/card";
+import React from "react";
+import { SearchResponse } from "../../shared/schema";
+import { Card, CardContent } from "./ui/card";
 import { MapPin, Flag, Globe, Link, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import GoogleMap from "@/components/GoogleMap";
+import { Badge } from "./ui/badge";
+import { Skeleton } from "./ui/skeleton";
+import GoogleMap from "./GoogleMap";
 
 interface ResultsContainerProps {
   loading: boolean;

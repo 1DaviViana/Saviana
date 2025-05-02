@@ -1,6 +1,6 @@
-import { useState, KeyboardEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, KeyboardEvent } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { Search } from "lucide-react";
 
 interface SearchBarProps {
