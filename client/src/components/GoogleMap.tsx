@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { SearchResult } from "@shared/schema";
-import { MapPin } from "@/components/ui/map-pin";
+import { MapPin } from "../components/ui/map-pin";
 
 // Definir tipos do Google Maps para evitar erros de TypeScript
 declare global {

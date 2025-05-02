@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getLocationByIP } from '@/lib/geo-fallback';
+import { getLocationByIP } from '../lib/geo-fallback';
 
 interface GeolocationState {
   latitude: number | null;
