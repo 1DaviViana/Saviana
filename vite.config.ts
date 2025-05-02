@@ -3,18 +3,22 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// Detecta se está em produção
+const isProduction = process.env.NODE_ENV === "production";
+const isReplit = process.env.REPL_ID !== undefined;
+
 export default defineConfig({
+  base: "/Saviana/", // 👈 necessário para GitHub Pages funcionar
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
+    ...(isProduction || !isReplit
+      ? []
+      : [
           await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
+            m.cartographer()
           ),
-        ]
-      : []),
+        ]),
   ],
   resolve: {
     alias: {
@@ -25,7 +29,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"), // 👈 sua pasta de saída
     emptyOutDir: true,
   },
 });
