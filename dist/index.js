@@ -831,14 +831,16 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default = defineConfig({
+var isProduction = process.env.NODE_ENV === "production";
+var isReplit = process.env.REPL_ID !== void 0;
+var vite_config_default = defineConfig(async () => ({
+  base: "/Saviana/",
+  // Necessário para GitHub Pages funcionar
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      )
+    ...!isProduction && isReplit ? [
+      (await import("@replit/vite-plugin-cartographer")).cartographer()
     ] : []
   ],
   resolve: {
@@ -853,7 +855,7 @@ var vite_config_default = defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true
   }
-});
+}));
 
 // server/vite.ts
 import { nanoid } from "nanoid";
