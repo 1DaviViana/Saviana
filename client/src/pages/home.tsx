@@ -4,7 +4,7 @@ import ConversationContainer from "../components/ConversationContainer";
 import ResultsContainer from "../components/ResultsContainer";
 import DebugLogs from "../components/DebugLogs";
 import { useGeolocation } from "../hooks/use-geolocation";
-import { SearchResponse } from "../../shared/schema";
+import { SearchResponse } from "../../../shared/schema";
 // Importação direta do UserCreditsDisplay
 import UserCreditsDisplay from "../components/UserCreditsDisplay";
 
