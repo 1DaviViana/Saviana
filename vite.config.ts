@@ -8,7 +8,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const isReplit = process.env.REPL_ID !== undefined;
 
 export default defineConfig(async () => ({
-  base: "/Saviana/", // Necessário para GitHub Pages funcionar
+  base: "/Saviana/", // Caminho correto para GitHub Pages
   plugins: [
     react(),
     runtimeErrorOverlay(),
