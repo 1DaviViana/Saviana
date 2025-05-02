@@ -7,18 +7,18 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 const isProduction = process.env.NODE_ENV === "production";
 const isReplit = process.env.REPL_ID !== undefined;
 
-export default defineConfig({
-  base: "/Saviana/", // 👈 necessário para GitHub Pages funcionar
+export default defineConfig(async () => ({
+  base: "/Saviana/", // Necessário para GitHub Pages funcionar
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    ...(isProduction || !isReplit
-      ? []
-      : [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer()
-          ),
-        ]),
+    ...(
+      !isProduction && isReplit
+        ? [
+            (await import("@replit/vite-plugin-cartographer")).cartographer()
+          ]
+        : []
+    )
   ],
   resolve: {
     alias: {
@@ -29,7 +29,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"), // 👈 sua pasta de saída
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
-});
+}));
