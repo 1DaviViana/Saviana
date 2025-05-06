@@ -301,33 +301,37 @@ async function searchLocalPlaces(
             throw new Error(error);
           }
           
-          // Formata os resultados para o formato que usamos na aplicação
-          const formattedResults = data.results.map((place) => ({
-            queryId: 0, // Will be updated when saved to storage
-            name: place.name,
-            category: "local" as const,
-            address: place.vicinity,
-            location: {
-              lat: place.geometry.location.lat,
-              lng: place.geometry.location.lng,
-            },
-            rating: place.rating ? place.rating.toString() : undefined,
-            reviews: place.user_ratings_total ? place.user_ratings_total.toString() : undefined,
-            hasProduct: true,
-            // Calculate distance from user (approximate)
-            distance: calculateDistance(
-              latitude,
-              longitude,
-              place.geometry.location.lat,
-              place.geometry.location.lng
-            ),
-            metadata: {
-              placeId: place.place_id,
-              openNow: place.opening_hours?.open_now,
-              types: place.types,
-              searchRadius: currentRadius // Adiciona o raio de busca usado para encontrar este resultado
-            } as any,
-          }));
+          // Formata os resultados para o formato que usamos na aplicação,
+          // filtrando apenas os resultados relevantes
+          const formattedResults = data.results
+            .filter(place => isRelevantPlace(place, term))
+            .map((place) => ({
+              queryId: 0, // Will be updated when saved to storage
+              name: place.name,
+              category: "local" as const,
+              address: place.vicinity,
+              location: {
+                lat: place.geometry.location.lat,
+                lng: place.geometry.location.lng,
+              },
+              rating: place.rating ? place.rating.toString() : undefined,
+              reviews: place.user_ratings_total ? place.user_ratings_total.toString() : undefined,
+              hasProduct: true,
+              // Calculate distance from user (approximate)
+              distance: calculateDistance(
+                latitude,
+                longitude,
+                place.geometry.location.lat,
+                place.geometry.location.lng
+              ),
+              metadata: {
+                placeId: place.place_id,
+                openNow: place.opening_hours?.open_now,
+                types: place.types,
+                searchRadius: currentRadius, // Adiciona o raio de busca usado para encontrar este resultado
+                searchTerm: term // Armazena o termo usado para encontrar este resultado
+              } as any,
+            }));
           
           // Armazenar os resultados no cache para uso futuro
           placeSearchCache[cacheKey] = {

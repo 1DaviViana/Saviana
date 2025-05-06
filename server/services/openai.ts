@@ -41,7 +41,7 @@ export async function analyzeQuery(query: string): Promise<QueryAnalysisResponse
       "supermercado": { needsClarification: false, isPerishable: false, refinedQuery: "supermercado" },
       "farmácia": { needsClarification: false, isPerishable: false, refinedQuery: "farmácia remédios" },
       "remédio": { needsClarification: false, isPerishable: false, refinedQuery: "remédio farmácia" },
-      "celular": { needsClarification: false, isPerishable: false, refinedQuery: "celular smartphone loja" },
+      "celular": { needsClarification: false, isPerishable: false, refinedQuery: "celular smartphone telefone móvel" },
       "roupa": { needsClarification: true, isPerishable: false, refinedQuery: undefined }
     };
     
@@ -236,6 +236,30 @@ export async function analyzeQueryWithResponse(
         ],
         _debug: {
           reason: "Optimized categories for bread/bakery items",
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+    
+    // Otimização específica para busca de celular/smartphone
+    if (query.toLowerCase().includes('celular') || 
+        query.toLowerCase().includes('smartphone') || 
+        query.toLowerCase().includes('telefone')) {
+      return {
+        categories: [
+          "Loja de celulares",
+          "Loja de eletrônicos", 
+          "Operadora de telefonia",
+          "Revendedor autorizado",
+          "Magazine Luiza",
+          "Casas Bahia",
+          "Fast Shop",
+          "Americanas",
+          "Ponto Frio",
+          "Shopping center"
+        ],
+        _debug: {
+          reason: "Optimized categories for mobile phones",
           timestamp: new Date().toISOString()
         }
       };
