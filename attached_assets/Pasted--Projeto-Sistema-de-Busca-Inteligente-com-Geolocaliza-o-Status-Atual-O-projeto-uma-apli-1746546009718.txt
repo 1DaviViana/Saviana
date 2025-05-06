@@ -1,0 +1,55 @@
+----
+
+Projeto: Sistema de Busca Inteligente com Geolocalização
+Status Atual
+O projeto é uma aplicação web completa para busca de produtos em estabelecimentos próximos, com validação de resultados por IA. A versão atual (maio/2025) inclui:
+
+Frontend React/TypeScript com interface responsiva
+Backend Express/Node.js com APIs integradas (OpenAI, Google Places)
+Sistema de busca com raio progressivo (250m a 2km)
+Validação de resultados via IA (análise YES/NO por estabelecimento)
+Gerenciamento de cache para otimizar requisições
+Arquitetura
+Monorepo para desenvolvimento em Replit
+Estrutura preparada para deploy separado:
+Frontend → GitHub Pages
+Backend → Railway
+Funcionalidades Principais
+Busca por produtos com refinamento progressivo
+Geolocalização automática com fallback para localização por IP
+Validação inteligente de estabelecimentos pela IA
+Resultados ordenados por proximidade
+Suporte para produtos perecíveis e não-perecíveis
+
+Status de Implementação: Manutenção para deploy na plataforma Railway
+
+Dependências Externas
+Google Places API
+OpenAI API
+
+----
+
+Erro atual no GitHub:
+
+TypeScript check
+
+Run npm run check
+
+> rest-express@1.0.0 check
+> tsc
+
+Error: server/services/places.ts(118,45): error TS2339: Property 'validationConfidence' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(276,54): error TS2339: Property 'placeId' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(276,86): error TS2339: Property 'placeId' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(287,36): error TS2339: Property 'placeId' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(290,34): error TS2339: Property 'types' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(301,13): error TS2345: Argument of type '{ placeId: string; name: string; category: string; types: string[]; address: string | null | undefined; }[]' is not assignable to parameter of type '{ placeId: string; name: string; category?: string | undefined; types?: string[] | undefined; address?: string | undefined; }[]'.
+  Type '{ placeId: string; name: string; category: string; types: string[]; address: string | null | undefined; }' is not assignable to type '{ placeId: string; name: string; category?: string | undefined; types?: string[] | undefined; address?: string | undefined; }'.
+    Types of property 'address' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+Error: server/services/places.ts(314,32): error TS2339: Property 'placeId' does not exist on type '[any, ...any[]]'.
+Error: server/services/places.ts(368,9): error TS2353: Object literal may only specify known properties, and '_debugAll' does not exist in type '[any, ...any[]]'.
+Error: Process completed with exit code 2.
+
+----
