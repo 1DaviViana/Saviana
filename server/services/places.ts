@@ -205,9 +205,6 @@ function logGooglePlacesResponse(data: any, error?: any) {
   });
 }
 
-/**
- * Busca adaptativa de locais - começa com raio pequeno e expande conforme necessidade
- */
 async function searchLocalPlaces(
   searchTerms: string[],
   latitude: number,
@@ -228,169 +225,126 @@ async function searchLocalPlaces(
     // Priorizar os primeiros termos que são mais relevantes
     const limitedSearchTerms = searchTerms.slice(0, 5);
     
-    // Definir raios progressivos para busca adaptativa
-    // Começando com 300m (distância a pé) e aumentando até encontrar resultados suficientes
-    const searchRadii = [300, 600, 1000, 2000, 5000]; // em metros
-    
-    let allPlaces: InsertSearchResult[] = [];
-    let totalResultsFound = 0;
-    let successfulRadius = 0;
-    let debugInfo: any = {
-      radiiSearched: [],
-      resultsPerRadius: {},
-      totalResults: 0
-    };
-    
-    // Estratégia adaptativa: Começamos com o menor raio e expandimos conforme necessário
-    for (const radius of searchRadii) {
-      if (allPlaces.length >= 5) {
-        // Já temos resultados suficientes, não precisamos expandir mais o raio
-        console.log(`✅ Encontrados ${allPlaces.length} resultados com raio de ${successfulRadius}m, parando busca`);
-        break;
+    // Use reduced search terms to find local places
+    const searchPromises = limitedSearchTerms.map(async (term) => {
+      // Cria uma chave única para o cache com base na localização e termo de busca
+      const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)},${term}`;
+      
+      // Verifica se já temos resultados em cache para esta combinação
+      const cacheEntry = placeSearchCache[cacheKey];
+      const cacheAge = cacheEntry ? Date.now() - cacheEntry.timestamp : Infinity;
+      const CACHE_TTL = 1000 * 60 * 30; // 30 minutos de tempo de vida do cache
+      
+      // Se há um cache válido (não expirado), use-o
+      if (cacheEntry && cacheAge < CACHE_TTL) {
+        console.log(`🔄 Usando resultados em cache para "${term}" (${Math.round(cacheAge / 1000 / 60)} min atrás)`);
+        return cacheEntry.results;
       }
       
-      console.log(`🔍 Buscando com raio de ${radius}m...`);
-      successfulRadius = radius;
-      debugInfo.radiiSearched.push(radius);
+      // Caso contrário, faça uma nova solicitação à API
+      const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
+      url.searchParams.append("location", `${latitude},${longitude}`);
+      url.searchParams.append("radius", "2000"); // 2km radius - reduzido para melhorar resultados próximos
+      url.searchParams.append("keyword", term);
+      url.searchParams.append("language", "pt-BR");
+      url.searchParams.append("key", googleApiKey);
       
-      // Para cada termo de busca, fazemos uma requisição separada
-      const searchPromises = limitedSearchTerms.map(async (term) => {
-        // Cria uma chave única para o cache com base na localização, termo e raio de busca
-        const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)},${term},${radius}`;
-        
-        // Verifica se já temos resultados em cache para esta combinação
-        const cacheEntry = placeSearchCache[cacheKey];
-        const cacheAge = cacheEntry ? Date.now() - cacheEntry.timestamp : Infinity;
-        const CACHE_TTL = 1000 * 60 * 30; // 30 minutos de tempo de vida do cache
-        
-        // Se há um cache válido (não expirado), use-o
-        if (cacheEntry && cacheAge < CACHE_TTL) {
-          console.log(`🔄 Usando resultados em cache para "${term}" com raio ${radius}m (${Math.round(cacheAge / 1000 / 60)} min atrás)`);
-          return cacheEntry.results;
-        }
-        
-        // Caso contrário, faça uma nova solicitação à API
-        const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
-        url.searchParams.append("location", `${latitude},${longitude}`);
-        url.searchParams.append("radius", radius.toString());
-        url.searchParams.append("keyword", term);
-        url.searchParams.append("language", "pt-BR");
-        url.searchParams.append("key", googleApiKey);
-        
-        // Log da requisição
-        logGooglePlacesRequest(url.toString(), {
-          location: `${latitude},${longitude}`,
-          radius: radius.toString(),
-          keyword: term,
-          language: "pt-BR"
-        });
-        
-        // Adicionar timeout para evitar requisições que ficam pendentes
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
-        
-        try {
-          const response = await fetch(url.toString(), { 
-            signal: controller.signal 
-          });
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            throw new Error(`Google Places API error: ${response.statusText}`);
-          }
-          
-          const data = await response.json() as GooglePlacesResponse;
-          
-          // Log da resposta
-          logGooglePlacesResponse(data);
-          
-          if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-            const error = `Google Places API error: ${data.status}`;
-            logGooglePlacesResponse(data, error);
-            throw new Error(error);
-          }
-          
-          // Formata os resultados para o formato que usamos na aplicação
-          const formattedResults = data.results.map((place) => ({
-            queryId: 0, // Will be updated when saved to storage
-            name: place.name,
-            category: "local" as const,
-            address: place.vicinity,
-            location: {
-              lat: place.geometry.location.lat,
-              lng: place.geometry.location.lng,
-            },
-            rating: place.rating ? place.rating.toString() : undefined,
-            reviews: place.user_ratings_total ? place.user_ratings_total.toString() : undefined,
-            hasProduct: true,
-            // Calculate distance from user (approximate)
-            distance: calculateDistance(
-              latitude,
-              longitude,
-              place.geometry.location.lat,
-              place.geometry.location.lng
-            ),
-            metadata: {
-              placeId: place.place_id,
-              openNow: place.opening_hours?.open_now,
-              types: place.types,
-              searchTerm: term, // Adicionamos o termo usado para encontrar este resultado
-              searchRadius: radius, // Adicionamos o raio usado para encontrar este resultado
-            } as any,
-          }));
-          
-          // Armazenar os resultados no cache para uso futuro
-          placeSearchCache[cacheKey] = {
-            results: formattedResults,
-            timestamp: Date.now()
-          };
-          
-          return formattedResults;
-        } catch (error) {
-          clearTimeout(timeoutId);
-          console.error(`Error fetching places for term "${term}" with radius ${radius}m:`, error);
-          return []; // Retornar array vazio para não quebrar o Promise.all
-        }
+      // Log da requisição
+      logGooglePlacesRequest(url.toString(), {
+        location: `${latitude},${longitude}`,
+        radius: "2000",
+        keyword: term,
+        language: "pt-BR"
       });
       
-      const placesArrays = await Promise.all(searchPromises);
-      const currentRadiusResults = placesArrays.flat();
+      // Adicionar timeout para evitar requisições que ficam pendentes
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
       
-      // Registrar quantos resultados encontramos neste raio
-      debugInfo.resultsPerRadius[radius] = currentRadiusResults.length;
-      totalResultsFound += currentRadiusResults.length;
-      
-      // Adicionar resultados deste raio ao conjunto total
-      allPlaces = [...allPlaces, ...currentRadiusResults];
-      
-      // Remove duplicates based on place_id (pode ter resultados duplicados em diferentes termos)
-      allPlaces = allPlaces.filter(
-        (place, index, self) =>
-          index === self.findIndex((p) => 
-            p.metadata.placeId === place.metadata.placeId
-          )
-      );
-      
-      console.log(`📊 Raio ${radius}m: ${currentRadiusResults.length} resultados (total único: ${allPlaces.length})`);
-    }
+      try {
+        const response = await fetch(url.toString(), { 
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`Google Places API error: ${response.statusText}`);
+        }
+        
+        const data = await response.json() as GooglePlacesResponse;
+        
+        // Log da resposta
+        logGooglePlacesResponse(data);
+        
+        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+          const error = `Google Places API error: ${data.status}`;
+          logGooglePlacesResponse(data, error);
+          throw new Error(error);
+        }
+        
+        // Formata os resultados para o formato que usamos na aplicação
+        const formattedResults = data.results.map((place) => ({
+          queryId: 0, // Will be updated when saved to storage
+          name: place.name,
+          category: "local" as const,
+          address: place.vicinity,
+          location: {
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng,
+          },
+          rating: place.rating ? place.rating.toString() : undefined,
+          reviews: place.user_ratings_total ? place.user_ratings_total.toString() : undefined,
+          hasProduct: true,
+          // Calculate distance from user (approximate)
+          distance: calculateDistance(
+            latitude,
+            longitude,
+            place.geometry.location.lat,
+            place.geometry.location.lng
+          ),
+          metadata: {
+            placeId: place.place_id,
+            openNow: place.opening_hours?.open_now,
+            types: place.types,
+          } as any,
+        }));
+        
+        // Armazenar os resultados no cache para uso futuro
+        placeSearchCache[cacheKey] = {
+          results: formattedResults,
+          timestamp: Date.now()
+        };
+        
+        return formattedResults;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error(`Error fetching places for term "${term}":`, error);
+        return []; // Retornar array vazio para não quebrar o Promise.all
+      }
+    });
     
-    // Atualizar informações de debug
-    debugInfo.totalResults = totalResultsFound;
-    debugInfo.uniqueResults = allPlaces.length;
-    debugInfo.finalRadius = successfulRadius;
+    const placesArrays = await Promise.all(searchPromises);
+    const allPlaces = placesArrays.flat();
+    
+    // Remove duplicates based on place_id
+    const uniqueResults = allPlaces.filter(
+      (place, index, self) =>
+        index === self.findIndex((p) => 
+          p.metadata.placeId === place.metadata.placeId
+        )
+    );
     
     // Sort results by distance (closest first)
-    const sortedResults = allPlaces.sort((a, b) => {
+    const sortedResults = uniqueResults.sort((a, b) => {
       // Extract numeric distance values for comparison
       const distanceA = parseDistanceString(a.distance || '');
       const distanceB = parseDistanceString(b.distance || '');
       return distanceA - distanceB;
     });
     
-    // Limitamos a 10 resultados para não sobrecarregar a interface
-    const finalResults = sortedResults.slice(0, 10);
+    // Incluir informações de debug no primeiro resultado se houver algum
+    const finalResults = sortedResults.slice(0, 5);
     
-    // Incluir informações de debug no primeiro resultado, se houver algum
     if (finalResults.length > 0) {
       finalResults[0].metadata = {
         ...finalResults[0].metadata,
@@ -398,7 +352,8 @@ async function searchLocalPlaces(
           apiStatus: 'OK',
           coordsUsed: { latitude, longitude },
           searchTerms: searchTerms,
-          adaptiveSearch: debugInfo
+          totalResultsFound: allPlaces.length,
+          uniqueResultsFound: uniqueResults.length
         }
       };
     }
