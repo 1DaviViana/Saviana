@@ -29,9 +29,9 @@ jobs:
 
       - name: Build Frontend
         env:
-          VITE_API_URL: ${{ secrets.BACKEND_URL }}
+          VITE_API_URL: https://web-production-76420.up.railway.app
         run: |
-          npm run build:frontend
+          vite build
           echo > dist/public/.nojekyll
 
       - name: Deploy to GitHub Pages
