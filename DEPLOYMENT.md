@@ -12,7 +12,15 @@ Certifique-se de que todas as dependências necessárias estão instaladas no pr
 npm install
 ```
 
-### 2. Variáveis de Ambiente
+### 2. Verificar Arquivos no Repositório
+
+Para que o deploy funcione corretamente, você deve ter os seguintes arquivos em seu repositório:
+
+- `build.js` - Script customizado para build
+- `server/staticServe.ts` - Implementação segura para servir arquivos estáticos
+- `railway.toml` - Configuração específica para Railway
+
+### 3. Variáveis de Ambiente
 
 Configure as seguintes variáveis de ambiente no seu projeto Railway:
 
@@ -20,11 +28,17 @@ Configure as seguintes variáveis de ambiente no seu projeto Railway:
 - `NODE_ENV`: Defina como "production"
 - `PORT`: Railway irá fornecer esta variável automaticamente
 
-### 3. Configuração do Railway
+Você pode usar o arquivo `.env.example` como modelo para configurar suas variáveis de ambiente.
 
-1. Certifique-se de que o Railway está configurado para usar Node.js 18.x
-2. Use o comando `npm run start` como comando de inicialização
-3. O Railway detectará automaticamente seu projeto Node.js
+### 4. Configuração do Railway
+
+1. Certifique-se de que o Railway está configurado para usar Node.js 18.x (conforme definido no railway.toml)
+2. Siga estas etapas para configurar seu projeto no Railway:
+   - Faça login no Railway
+   - Clique em "New Project"
+   - Selecione "Deploy from GitHub"
+   - Conecte seu repositório GitHub
+   - Configure as variáveis de ambiente
 
 ## Processo de Build e Start
 

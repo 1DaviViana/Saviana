@@ -1,0 +1,20 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+watchPatterns = ["dist/**", "public/**"]
+nixPackages = ["nodejs", "git"]
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+[nixpacks]
+nodejs-version = "18"
+
+# Definido aqui para referência, mas não é necessário configurar na interface
+[env]
+NODE_ENV = "production"
+PORT = "5000"
