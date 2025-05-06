@@ -1,8 +1,49 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from 'cors';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Configurar origens permitidas para CORS
+const allowedOrigins = [
+  // Origens de desenvolvimento
+  'http://localhost:3000',
+  'http://localhost:5000',
+  // Adicione a origem do seu frontend no GitHub Pages
+  'https://1daviviana.github.io',
+  // Origens do Replit
+  /\.replit\.dev$/
+];
+
+// Configuração do CORS
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Permitir requisições sem origem (como chamadas de API locais)
+    if (!origin) return callback(null, true);
+    
+    // Verificar se a origem está na lista de permitidas ou corresponde a um padrão
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      } else {
+        // Para padrões RegExp
+        return allowedOrigin.test(origin);
+      }
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log(`Origem bloqueada por CORS: ${origin}`);
+      callback(new Error('Não permitido por CORS'));
+    }
+  },
+  credentials: true, // Importante para enviar cookies em requisições cross-origin
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 const app = express();
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
