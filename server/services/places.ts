@@ -312,7 +312,7 @@ async function searchLocalPlaces(
           // Atualizar informações de hasProduct com base na validação da IA
           for (const placeValidation of validationResult.validatedResults) {
             const matchingPlace = allResults.find(
-              p => p.metadata?.placeId === placeValidation.placeId
+              p => p.metadata && (p.metadata as any).placeId === placeValidation.placeId
             );
             
             if (matchingPlace) {
@@ -364,17 +364,17 @@ async function searchLocalPlaces(
     
     // Adicionar dados de debug ao primeiro resultado
     if (finalResults.length > 0) {
-      finalResults[0].metadata = {
-        ...finalResults[0].metadata,
-        _debugAll: {
-          apiStatus: 'OK',
-          coordsUsed: { latitude, longitude },
-          searchTerms: searchTerms,
-          totalFound: allResults.length,
-          validatedCount: validatedResults.length,
-          attemptsUsed: attempts,
-          searchRadii: SEARCH_RADII.slice(0, currentRadiusIndex + 1)
-        }
+      if (!finalResults[0].metadata) {
+        finalResults[0].metadata = {} as any;
+      }
+      (finalResults[0].metadata as any)._debugAll = {
+        apiStatus: 'OK',
+        coordsUsed: { latitude, longitude },
+        searchTerms: searchTerms,
+        totalFound: allResults.length,
+        validatedCount: validatedResults.length,
+        attemptsUsed: attempts,
+        searchRadii: SEARCH_RADII.slice(0, currentRadiusIndex + 1)
       };
     }
     
@@ -501,7 +501,8 @@ async function searchLocalPlacesWithRadius(
   const uniqueResults = allPlaces.filter(
     (place, index, self) =>
       index === self.findIndex((p) => 
-        p.metadata.placeId === place.metadata.placeId
+        p.metadata && place.metadata && 
+        (p.metadata as any).placeId === (place.metadata as any).placeId
       )
   );
   
