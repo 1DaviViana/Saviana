@@ -23,6 +23,15 @@ interface PlaceSearchCacheEntry {
   timestamp: number;
 }
 
+// Limpar o cache periodicamente
+export function clearPlaceSearchCache() {
+  console.log("🧹 Limpando cache de busca de lugares...");
+  Object.keys(placeSearchCache).forEach(key => {
+    delete placeSearchCache[key];
+  });
+  console.log("✅ Cache limpo com sucesso!");
+}
+
 const placeSearchCache: Record<string, PlaceSearchCacheEntry> = {};
 
 interface GooglePlacesResponse {
@@ -212,9 +221,9 @@ async function searchLocalPlaces(
   try {
     console.log("Searching for local places with terms:", searchTerms);
     
-    // Otimização: Limitar a 3 termos de busca para reduzir chamadas à API
+    // Otimização: Limitar a 5 termos de busca para ter melhores resultados
     // Priorizar os primeiros termos que são mais relevantes
-    const limitedSearchTerms = searchTerms.slice(0, 3);
+    const limitedSearchTerms = searchTerms.slice(0, 5);
     
     // Use reduced search terms to find local places
     const searchPromises = limitedSearchTerms.map(async (term) => {
@@ -235,7 +244,7 @@ async function searchLocalPlaces(
       // Caso contrário, faça uma nova solicitação à API
       const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
       url.searchParams.append("location", `${latitude},${longitude}`);
-      url.searchParams.append("radius", "5000"); // 5km radius
+      url.searchParams.append("radius", "2000"); // 2km radius - reduzido para melhorar resultados próximos
       url.searchParams.append("keyword", term);
       url.searchParams.append("language", "pt-BR");
       url.searchParams.append("key", googleApiKey);
@@ -243,7 +252,7 @@ async function searchLocalPlaces(
       // Log da requisição
       logGooglePlacesRequest(url.toString(), {
         location: `${latitude},${longitude}`,
-        radius: "5000",
+        radius: "2000",
         keyword: term,
         language: "pt-BR"
       });

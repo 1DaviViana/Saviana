@@ -32,7 +32,7 @@ export async function analyzeQuery(query: string): Promise<QueryAnalysisResponse
       "cerveja": { needsClarification: false, isPerishable: true, refinedQuery: "cerveja bebida alcoólica" },
       "vinho": { needsClarification: false, isPerishable: true, refinedQuery: "vinho bebida alcoólica" },
       "chocolate": { needsClarification: false, isPerishable: true, refinedQuery: "chocolate doce" },
-      "pão": { needsClarification: false, isPerishable: true, refinedQuery: "pão fresco padaria" },
+      "pão": { needsClarification: false, isPerishable: true, refinedQuery: "pão fresco padaria panificadora" },
       "pizza": { needsClarification: false, isPerishable: true, refinedQuery: "pizza pronta ou congelada" },
       "hamburguer": { needsClarification: false, isPerishable: true, refinedQuery: "hamburguer lanche" },
       "lanche": { needsClarification: false, isPerishable: true, refinedQuery: "lanche rápido" },
@@ -214,6 +214,28 @@ export async function analyzeQueryWithResponse(
         ],
         _debug: {
           reason: "Optimized categories for common beverage",
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+    
+    // Otimização específica para busca de pão
+    if (query.toLowerCase().includes('pão') || query.toLowerCase().includes('paes')) {
+      return {
+        categories: [
+          "Padaria",
+          "Panificadora", 
+          "Supermercado",
+          "Mercearia",
+          "Café",
+          "Loja de Conveniência",
+          "Mercado de Alimentos Naturais",
+          "Quitanda",
+          "Mercado de Agricultores",
+          "Confeitaria"
+        ],
+        _debug: {
+          reason: "Optimized categories for bread/bakery items",
           timestamp: new Date().toISOString()
         }
       };
