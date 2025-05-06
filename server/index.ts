@@ -12,7 +12,9 @@ const allowedOrigins = [
   // Adicione a origem do seu frontend no GitHub Pages
   'https://1daviviana.github.io',
   // Origens do Replit
-  /\.replit\.dev$/
+  /\.replit\.dev$/,
+  // Origens Railway (wildcards para qualquer domínio Railway)
+  /\.railway\.app$/
 ];
 
 // Configuração do CORS
@@ -84,9 +86,27 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Log detalhado do erro para ajudar no troubleshooting
+    console.error("❌ Error caught by error handler:", {
+      status,
+      message,
+      stack: err.stack,
+      path: _req.path,
+      method: _req.method,
+      timestamp: new Date().toISOString()
+    });
 
-    res.status(status).json({ message });
-    throw err;
+    // Responder com erro adequado
+    res.status(status).json({ 
+      message, 
+      status,
+      timestamp: new Date().toISOString(),
+      path: _req.path
+    });
+    
+    // Não propagar o erro, já foi tratado
+    // throw err; <- removido para evitar crashes desnecessários
   });
 
   // importantly only setup vite in development and after
@@ -98,15 +118,21 @@ app.use((req, res, next) => {
     serveStaticProd(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Usar a porta fornecida pelo ambiente (Railway/Replit) ou 5000 como fallback
+  // Em produção o Railway vai fornecer a variável PORT
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+  
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`🚀 Servidor rodando em http://0.0.0.0:${port}`);
+    log(`📊 Ambiente: ${process.env.NODE_ENV || 'desenvolvimento'}`);
+    
+    // Log adicional para ajudar no troubleshooting em produção
+    if (process.env.NODE_ENV === 'production') {
+      log(`💡 Health check disponível em: http://0.0.0.0:${port}/api/health`);
+    }
   });
 })();
