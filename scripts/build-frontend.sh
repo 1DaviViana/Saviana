@@ -8,6 +8,12 @@ cd "$(dirname "$0")/.."
 echo "Instalando dependências..."
 npm install
 
+# Configura variáveis de ambiente se fornecidas
+if [ ! -z "$VITE_API_URL" ]; then
+  echo "VITE_API_URL=$VITE_API_URL" > client/.env.production.local
+  echo "Configurado API URL: $VITE_API_URL"
+fi
+
 # Constrói o frontend
 echo "Construindo o frontend..."
 npx vite build
@@ -16,5 +22,17 @@ npx vite build
 echo "Criando arquivo .nojekyll..."
 echo > dist/public/.nojekyll
 
+# Copia o CNAME se existir
+if [ -f "CNAME" ]; then
+  echo "Copiando CNAME para dist/public..."
+  cp CNAME dist/public/
+fi
+
 echo "Frontend construído com sucesso em ./dist/public"
 echo "Pronto para implantação no GitHub Pages"
+
+# Deploy para GitHub Pages se solicitado
+if [ "$1" == "--deploy" ]; then
+  echo "Iniciando deploy para GitHub Pages..."
+  npx gh-pages -d dist/public
+fi
