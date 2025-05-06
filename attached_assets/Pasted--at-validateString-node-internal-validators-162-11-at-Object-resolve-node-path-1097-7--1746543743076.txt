@@ -1,0 +1,129 @@
+    at validateString (node:internal/validators:162:11)
+
+    at Object.resolve (node:path:1097:7)
+
+    at serveStatic (file:///app/dist/index.js:917:26)
+
+    at file:///app/dist/index.js:968:5 {
+
+  code: 'ERR_INVALID_ARG_TYPE'
+
+}
+
+ 
+
+Node.js v18.20.5
+
+npm warn config production Use `--omit=dev` instead.
+
+ 
+
+> rest-express@1.0.0 start
+
+> NODE_ENV=production node dist/index.js
+
+ 
+
+node:internal/errors:496
+
+    ErrorCaptureStackTrace(err);
+
+    ^
+
+ 
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+
+    at new NodeError (node:internal/errors:405:5)
+
+    at validateString (node:internal/validators:162:11)
+
+    at Object.resolve (node:path:1097:7)
+
+    at serveStatic (file:///app/dist/index.js:917:26)
+
+    at file:///app/dist/index.js:968:5 {
+
+  code: 'ERR_INVALID_ARG_TYPE'
+
+}
+
+ 
+
+Node.js v18.20.5
+
+npm warn config production Use `--omit=dev` instead.
+
+ 
+
+> rest-express@1.0.0 start
+
+> NODE_ENV=production node dist/index.js
+
+ 
+
+node:internal/errors:496
+
+    ErrorCaptureStackTrace(err);
+
+    ^
+
+ 
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+
+    at new NodeError (node:internal/errors:405:5)
+
+    at validateString (node:internal/validators:162:11)
+
+    at Object.resolve (node:path:1097:7)
+
+    at serveStatic (file:///app/dist/index.js:917:26)
+
+    at file:///app/dist/index.js:968:5 {
+
+  code: 'ERR_INVALID_ARG_TYPE'
+
+}
+
+ 
+
+Node.js v18.20.5
+
+npm warn config production Use `--omit=dev` instead.
+
+ 
+
+> rest-express@1.0.0 start
+
+> NODE_ENV=production node dist/index.js
+
+ 
+
+node:internal/errors:496
+
+    ErrorCaptureStackTrace(err);
+
+    ^
+
+ 
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+
+    at new NodeError (node:internal/errors:405:5)
+
+    at validateString (node:internal/validators:162:11)
+
+    at Object.resolve (node:path:1097:7)
+
+    at serveStatic (file:///app/dist/index.js:917:26)
+
+    at file:///app/dist/index.js:968:5 {
+
+  code: 'ERR_INVALID_ARG_TYPE'
+
+}
+
+ 
+
+Node.js v18.20.5

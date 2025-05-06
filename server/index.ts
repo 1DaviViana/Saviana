@@ -1,7 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from 'cors';
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, log } from "./vite";
+import { serveStaticProd } from "./staticServe";
 
 // Configurar origens permitidas para CORS
 const allowedOrigins = [
@@ -94,7 +95,7 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    serveStaticProd(app);
   }
 
   // ALWAYS serve the app on port 5000
