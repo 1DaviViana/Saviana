@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeQuery } from "./services/openai";
-import { searchPlaces } from "./services/places";
+import { searchPlaces, clearPlaceSearchCache } from "./services/places";
 import { searchRequestSchema, searchResponseSchema } from "@shared/schema";
 import { ZodError } from "zod";
 
@@ -10,6 +10,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint para Railway
   app.get("/api/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+  
+  // Rota para limpar o cache de busca
+  app.post("/api/clear-cache", (_req: Request, res: Response) => {
+    try {
+      clearPlaceSearchCache();
+      res.json({ 
+        status: "ok", 
+        message: "Cache limpo com sucesso",
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error) {
+      console.error("Erro ao limpar cache:", error);
+      res.status(500).json({ 
+        status: "error", 
+        message: "Erro ao limpar cache", 
+        error: String(error) 
+      });
+    }
   });
   
   // Search API endpoint
