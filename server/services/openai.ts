@@ -190,6 +190,140 @@ interface QueryResponseResult {
 }
 
 /**
+ * Interface para resultado da validação de estabelecimentos pela IA
+ */
+interface ValidatePlacesResult {
+  validatedResults: Array<{
+    placeId: string;
+    hasProduct: boolean;
+    confidence: number;
+    reason?: string;
+  }>;
+  _debug?: any;
+}
+
+/**
+ * Valida se os lugares encontrados provavelmente possuem o produto buscado
+ * Recebe uma lista de estabelecimentos e retorna informações sobre quais provavelmente têm o produto
+ */
+export async function validatePlacesResults(
+  query: string,
+  userResponse: string,
+  places: Array<{
+    placeId: string;
+    name: string;
+    category?: string;
+    types?: string[];
+    address?: string;
+  }>
+): Promise<ValidatePlacesResult> {
+  try {
+    // Se não há lugares para validar, retornar array vazio
+    if (!places || places.length === 0) {
+      return { 
+        validatedResults: [],
+        _debug: {
+          reason: "No places to validate",
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+    
+    // Preparar a descrição de cada estabelecimento
+    const placesDescription = places.map(place => {
+      return `
+      - ID: ${place.placeId}
+      - Nome: ${place.name}
+      - Categoria: ${place.category || 'Não especificada'}
+      - Endereço: ${place.address || 'Não especificado'}
+      - Tipos: ${place.types ? place.types.join(', ') : 'Não especificados'}
+      `;
+    }).join('\n');
+    
+    const productDescription = userResponse ? 
+      `${query} (Detalhes adicionais: ${userResponse})` : 
+      query;
+    
+    const prompt = `
+      Você é um especialista em análise de estabelecimentos comerciais. Preciso que você analise uma lista de estabelecimentos
+      e determine quais deles provavelmente vendem ou oferecem o produto/serviço específico.
+      
+      Produto/serviço buscado: "${productDescription}"
+      
+      Lista de estabelecimentos:
+      ${placesDescription}
+      
+      Para cada estabelecimento, por favor avalie:
+      1. Considerando o nome do estabelecimento, sua categoria, endereço e tipos, qual a probabilidade dele oferecer o produto/serviço buscado?
+      2. Forneça uma resposta SIM ou NÃO indicando se o estabelecimento provavelmente tem o produto.
+      3. Um nível de confiança de 0 a 1, onde 0 é nenhuma confiança e 1 é certeza absoluta.
+      4. Uma breve explicação do motivo da sua conclusão.
+      
+      Por favor, retorne os resultados em formato JSON com a seguinte estrutura:
+      {
+        "validatedResults": [
+          {
+            "placeId": "id_do_estabelecimento", 
+            "hasProduct": true/false, 
+            "confidence": número entre 0 e 1,
+            "reason": "breve explicação"
+          },
+          ...
+        ]
+      }
+      
+      IMPORTANTE: 
+      - Seja realista em suas avaliações. Nem todos os lugares vendem todos os produtos.
+      - Considere o contexto cultural e geográfico brasileiro.
+      - Para produtos alimentícios, considere que mercados, supermercados e hipermercados geralmente têm uma ampla variedade.
+      - Para serviços específicos, seja mais criterioso na avaliação.
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
+    }
+
+    // Parse the response
+    const result = JSON.parse(content) as ValidatePlacesResult;
+    
+    // Add debug data
+    result._debug = {
+      content,
+      prompt: prompt.trim(),
+      model: MODEL,
+      timestamp: new Date().toISOString()
+    };
+    
+    return result;
+  } catch (error) {
+    console.error("OpenAI API error when validating places:", error);
+    
+    // Em caso de erro, considerar que todos os lugares têm o produto com confiança média
+    const fallbackResults = places.map(place => ({
+      placeId: place.placeId,
+      hasProduct: true,
+      confidence: 0.5,
+      reason: "Erro na validação - considerando que o estabelecimento pode ter o produto"
+    }));
+    
+    return {
+      validatedResults: fallbackResults,
+      _debug: {
+        error: String(error),
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+}
+
+/**
  * Analyzes a query with the user's response to generate search categories
  * for finding both local and online establishments
  */
