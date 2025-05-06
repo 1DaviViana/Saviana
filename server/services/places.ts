@@ -115,7 +115,7 @@ export async function searchPlaces(
           name: r.name, 
           address: r.address,
           hasProduct: r.hasProduct,
-          validationConfidence: r.metadata?.validationConfidence,
+          validationConfidence: r.metadata ? (r.metadata as any).validationConfidence : undefined,
         }))
       });
       results.push(...localResults);
@@ -273,7 +273,8 @@ async function searchLocalPlaces(
       // Adicionar novos resultados aos resultados acumulados (garantindo que não haja duplicatas)
       const newUniqueResults = resultsForCurrentRadius.filter(
         newResult => !allResults.some(
-          existingResult => existingResult.metadata?.placeId === newResult.metadata?.placeId
+          existingResult => existingResult.metadata && newResult.metadata && 
+            (existingResult.metadata as any).placeId === (newResult.metadata as any).placeId
         )
       );
       
@@ -284,11 +285,11 @@ async function searchLocalPlaces(
         // Criar lista de estabelecimentos para validação pela IA
         // Incluindo apenas os novos resultados que ainda não foram validados
         const placesToValidate = newUniqueResults.map(place => ({
-          placeId: place.metadata?.placeId as string,
+          placeId: place.metadata ? (place.metadata as any).placeId as string : '',
           name: place.name,
           category: place.category,
-          types: place.metadata?.types as string[],
-          address: place.address
+          types: place.metadata ? (place.metadata as any).types as string[] : [],
+          address: place.address || undefined
         }));
         
         // Validar estabelecimentos com IA
