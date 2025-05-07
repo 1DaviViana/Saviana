@@ -3,105 +3,117 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-/**
- * Serve static files from the build directory in production
- * Otimizado para Railway e outros provedores de hospedagem
- */
+// Variáveis para armazenar __dirname e process.cwd() de forma segura
+let resolvedDirname: string | undefined;
+let resolvedCwd: string | undefined;
+
+// Bloco try-catch para inicializar __dirname
+try {
+  const currentFileUrl = import.meta.url;
+  if (typeof currentFileUrl !== 'string' || !currentFileUrl) {
+    console.error("❌ Critical [StaticServe Init]: import.meta.url is not a valid string or is empty. __dirname cannot be determined reliably.");
+    // Deixar resolvedDirname como undefined
+  } else {
+    const currentFilePath = fileURLToPath(currentFileUrl); // Pode lançar erro se currentFileUrl não for um file URL válido
+    resolvedDirname = path.dirname(currentFilePath);
+    if (typeof resolvedDirname !== 'string') {
+        console.error(`❌ Critical [StaticServe Init]: path.dirname did not return a string for __dirname. Got: ${typeof resolvedDirname}`);
+        resolvedDirname = undefined;
+    }
+  }
+} catch (e: any) {
+  console.error("❌ Critical [StaticServe Init]: Error resolving __dirname from import.meta.url:", e.message);
+  resolvedDirname = undefined; // Garantir que é undefined em caso de erro
+}
+
+// Bloco try-catch para inicializar process.cwd()
+try {
+  resolvedCwd = process.cwd();
+  if (typeof resolvedCwd !== 'string' || !resolvedCwd) {
+      console.error(`❌ Critical [StaticServe Init]: process.cwd() did not return a valid string or is empty. Got: ${typeof resolvedCwd}, Value: "${resolvedCwd}"`);
+      resolvedCwd = undefined; // Garantir que é undefined se não for string válida
+  }
+} catch (e: any) {
+  console.error("❌ Critical [StaticServe Init]: Error getting process.cwd():", e.message);
+  resolvedCwd = undefined; // Garantir que é undefined em caso de erro
+}
+
+console.log(`[StaticServe Init Debug] Initial resolvedDirname: "${resolvedDirname}", Initial resolvedCwd: "${resolvedCwd}"`);
+
 export function serveStaticProd(app: Express) {
   try {
-    // Detectar ambiente e ajustar comportamento conforme necessário
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isRailway = process.env.RAILWAY_STATIC_URL || process.env.RAILWAY_SERVICE_NAME;
-    
-    console.log(`[StaticServe] Environment: NODE_ENV=${process.env.NODE_ENV}, Railway=${!!isRailway}`);
-    console.log(`[StaticServe] Current working directory: ${process.cwd()}`);
-    
-    // Obter o diretório atual baseado em import.meta.url (ESM)
-    let currentDir;
-    try {
-      const __filename = fileURLToPath(import.meta.url);
-      currentDir = path.dirname(__filename);
-      console.log(`[StaticServe] Current directory from import.meta.url: ${currentDir}`);
-    } catch (e) {
-      console.error(`[StaticServe] Error resolving current directory: ${e}`);
-      currentDir = process.cwd();
+    const possiblePaths: string[] = [];
+
+    if (typeof resolvedDirname === 'string' && resolvedDirname) {
+        possiblePaths.push(path.resolve(resolvedDirname, "../dist/public"));
+        possiblePaths.push(path.resolve(resolvedDirname, "../public"));
+        possiblePaths.push(path.resolve(resolvedDirname, "../../public"));
+    } else {
+        console.warn("[StaticServe] Skipping paths based on __dirname because it's invalid or undefined.");
     }
 
-    // Caminhos possíveis para os arquivos estáticos, em ordem de prioridade
-    const possiblePaths = [
-      // Caminhos específicos para Railway
-      path.join(process.cwd(), 'dist/public'),
-      path.join(process.cwd(), 'dist'),
-      
-      // Caminhos relativos ao arquivo atual
-      path.join(currentDir, '../dist/public'),
-      path.join(currentDir, '../public'),
-      
-      // Caminhos adicionais específicos para outros ambientes
-      path.join(process.cwd(), 'public')
-    ];
-    
-    console.log(`[StaticServe] Checking these paths: ${JSON.stringify(possiblePaths)}`);
-    
-    // Encontrar o primeiro caminho válido
-    let staticPath = null;
-    for (const testPath of possiblePaths) {
-      try {
-        if (fs.existsSync(testPath)) {
-          // Verificar se há arquivos estáticos neste diretório
-          const hasFiles = fs.readdirSync(testPath).length > 0;
-          if (hasFiles) {
-            staticPath = testPath;
-            console.log(`[StaticServe] Found valid static path with files: ${staticPath}`);
-            break;
-          } else {
-            console.log(`[StaticServe] Path exists but is empty: ${testPath}`);
-          }
-        }
-      } catch (e) {
-        console.warn(`[StaticServe] Error checking path ${testPath}: ${e}`);
-      }
+    if (typeof resolvedCwd === 'string' && resolvedCwd) {
+        possiblePaths.push(path.resolve(resolvedCwd, "dist/public"));
+        possiblePaths.push(path.resolve(resolvedCwd, "public"));
+    } else {
+        console.warn("[StaticServe] Skipping paths based on process.cwd() because it's invalid or undefined.");
     }
-    
-    if (!staticPath) {
-      console.warn("[StaticServe] No valid static files directory found. API endpoints will work, but static files won't be served.");
+
+    if (possiblePaths.length === 0) {
+        console.warn("⚠️ Warning [StaticServe]: No base directories (__dirname or process.cwd()) were valid. Cannot search for static files directory.");
+        return; // Não há como encontrar arquivos estáticos
+    }
+
+    console.log("[StaticServe Debug] Attempting to find static directory from possible paths:", possiblePaths);
+
+    const distPath = possiblePaths.find(p => {
+        if (typeof p !== 'string' || !p) { // Segurança extra
+            console.warn(`[StaticServe Debug] Invalid path string encountered in possiblePaths: "${p}"`);
+            return false;
+        }
+        try {
+            return fs.existsSync(p);
+        } catch (e: any) {
+            // fs.existsSync pode lançar erro se o path for inválido (ex: null byte), embora path.resolve deva prevenir isso.
+            console.warn(`[StaticServe Debug] Error calling fs.existsSync on path '${p}': ${e.message}`);
+            return false;
+        }
+    });
+
+    if (typeof distPath !== 'string' || !distPath) {
+      console.warn("⚠️ Warning [StaticServe]: Could not find a valid static files directory. Paths checked:", possiblePaths);
+      if (distPath !== undefined) { // Log se distPath for algo inesperado mas não undefined
+          console.warn(`[StaticServe Debug] distPath was found but deemed invalid. Type: ${typeof distPath}, Value: "${distPath}"`);
+      }
+      console.warn("[StaticServe] The application may not serve frontend files correctly.");
       return;
     }
-    
-    // Configurar middleware para servir arquivos estáticos
-    console.log(`📁 [StaticServe] Serving static files from: ${staticPath}`);
-    app.use(express.static(staticPath, {
-      // Opções para melhorar o desempenho em produção
-      maxAge: isProduction ? '1d' : 0, // Cache de 1 dia em produção
-      etag: true,
-      lastModified: true
-    }));
-    
-    // Configurar fallback para SPA (Single Page Application)
-    const indexPath = path.join(staticPath, 'index.html');
+
+    console.log(`📁 [StaticServe] Serving static files from: ${distPath}`);
+
+    // Serve static files
+    app.use(express.static(distPath));
+
+    // Fallback for SPA routing
+    const indexPath = path.resolve(distPath, "index.html"); // distPath é garantidamente uma string válida aqui
     if (fs.existsSync(indexPath)) {
-      console.log(`[StaticServe] Found index.html at ${indexPath}, configuring SPA routing`);
-      
-      // Rotear todas as requisições não encontradas para index.html (exceto API e arquivos estáticos)
-      app.use('*', (req, res, next) => {
-        // Ignorar requisições para API e arquivos estáticos
-        if (req.originalUrl.startsWith('/api/') || 
-            req.originalUrl.includes('.')) {
-          return next();
-        }
-        
-        // Servir o index.html para todas as outras rotas
+      app.use("*", (_req, res) => {
         res.sendFile(indexPath);
       });
     } else {
-      console.warn(`[StaticServe] index.html not found at ${indexPath}. SPA routing won't work.`);
+      console.warn(`⚠️ Warning [StaticServe]: index.html not found at ${indexPath}`);
     }
-    
   } catch (error: any) {
-    console.error("[StaticServe] Error configuring static file serving:", {
-      message: error.message,
-      stack: isProduction ? '(hidden in production)' : error.stack
+    // Este catch deveria pegar qualquer erro síncrono ocorrido no bloco try acima.
+    console.error("❌ Error in serveStaticProd (main try-catch block):", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code, // Adiciona o código do erro, se houver (ex: 'ERR_INVALID_ARG_TYPE')
+        name: error.name, // Adiciona o nome do erro (ex: 'TypeError')
+        errno: error.errno, // Para erros de sistema
+        syscall: error.syscall // Para erros de sistema
     });
     console.warn("[StaticServe] Proceeding without static file serving due to error.");
+    // Não relançar o erro; permite que a API continue funcionando se possível.
   }
 }
