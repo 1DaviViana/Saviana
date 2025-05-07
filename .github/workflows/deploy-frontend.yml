@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -31,8 +31,7 @@ jobs:
         env:
           VITE_API_URL: https://web-production-76420.up.railway.app
         run: |
-          vite build
-          echo > dist/public/.nojekyll
+          npm run build
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
