@@ -3,6 +3,20 @@ import cors from 'cors';
 import { registerRoutes } from "./routes";
 import { setupVite, log } from "./vite";
 import { serveStaticProd } from "./staticServe";
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Polyfill para import.meta.dirname (não é um padrão ES Modules)
+// Esta modificação corrige o erro: ERR_INVALID_ARG_TYPE 
+// quando import.meta.dirname é undefined em produção
+if (import.meta && typeof import.meta.url === 'string' && !('dirname' in import.meta)) {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  
+  // @ts-ignore - Adicionando propriedade dirname para compatibilidade
+  import.meta.dirname = __dirname;
+  console.log(`[Polyfill] Adicionado import.meta.dirname = ${__dirname}`);
+}
 
 // Configurar origens permitidas para CORS
 const allowedOrigins = [
