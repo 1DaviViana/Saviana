@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "npm run build"
-watchPatterns = ["dist/**", "public/**"]
+watchPatterns = ["**"]
 nixPackages = ["nodejs", "git"]
 
 [deploy]
