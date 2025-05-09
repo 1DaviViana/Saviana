@@ -1,5 +1,6 @@
 // server/index.ts
-import express2 from "express";
+import express3 from "express";
+import cors from "cors";
 
 // server/routes.ts
 import { createServer } from "http";
@@ -95,7 +96,7 @@ async function analyzeQuery(query) {
       "cerveja": { needsClarification: false, isPerishable: true, refinedQuery: "cerveja bebida alco\xF3lica" },
       "vinho": { needsClarification: false, isPerishable: true, refinedQuery: "vinho bebida alco\xF3lica" },
       "chocolate": { needsClarification: false, isPerishable: true, refinedQuery: "chocolate doce" },
-      "p\xE3o": { needsClarification: false, isPerishable: true, refinedQuery: "p\xE3o fresco padaria" },
+      "p\xE3o": { needsClarification: false, isPerishable: true, refinedQuery: "p\xE3o fresco padaria panificadora" },
       "pizza": { needsClarification: false, isPerishable: true, refinedQuery: "pizza pronta ou congelada" },
       "hamburguer": { needsClarification: false, isPerishable: true, refinedQuery: "hamburguer lanche" },
       "lanche": { needsClarification: false, isPerishable: true, refinedQuery: "lanche r\xE1pido" },
@@ -227,6 +228,95 @@ async function analyzeQuery(query) {
     };
   }
 }
+async function validatePlacesResults(query, userResponse, places) {
+  try {
+    if (!places || places.length === 0) {
+      return {
+        validatedResults: [],
+        _debug: {
+          reason: "No places to validate",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      };
+    }
+    const placesDescription = places.map((place) => {
+      return `
+      - ID: ${place.placeId}
+      - Nome: ${place.name}
+      - Categoria: ${place.category || "N\xE3o especificada"}
+      - Endere\xE7o: ${place.address || "N\xE3o especificado"}
+      - Tipos: ${place.types ? place.types.join(", ") : "N\xE3o especificados"}
+      `;
+    }).join("\n");
+    const productDescription = userResponse ? `${query} (Detalhes adicionais: ${userResponse})` : query;
+    const prompt = `
+      Voc\xEA \xE9 um especialista em an\xE1lise de estabelecimentos comerciais. Preciso que voc\xEA analise uma lista de estabelecimentos
+      e determine quais deles provavelmente vendem ou oferecem o produto/servi\xE7o espec\xEDfico.
+      
+      Produto/servi\xE7o buscado: "${productDescription}"
+      
+      Lista de estabelecimentos:
+      ${placesDescription}
+      
+      Para cada estabelecimento, por favor avalie:
+      1. Considerando o nome do estabelecimento, sua categoria, endere\xE7o e tipos, qual a probabilidade dele oferecer o produto/servi\xE7o buscado?
+      2. Forne\xE7a uma resposta SIM ou N\xC3O indicando se o estabelecimento provavelmente tem o produto.
+      3. Um n\xEDvel de confian\xE7a de 0 a 1, onde 0 \xE9 nenhuma confian\xE7a e 1 \xE9 certeza absoluta.
+      4. Uma breve explica\xE7\xE3o do motivo da sua conclus\xE3o.
+      
+      Por favor, retorne os resultados em formato JSON com a seguinte estrutura:
+      {
+        "validatedResults": [
+          {
+            "placeId": "id_do_estabelecimento", 
+            "hasProduct": true/false, 
+            "confidence": n\xFAmero entre 0 e 1,
+            "reason": "breve explica\xE7\xE3o"
+          },
+          ...
+        ]
+      }
+      
+      IMPORTANTE: 
+      - Seja realista em suas avalia\xE7\xF5es. Nem todos os lugares vendem todos os produtos.
+      - Considere o contexto cultural e geogr\xE1fico brasileiro.
+      - Para produtos aliment\xEDcios, considere que mercados, supermercados e hipermercados geralmente t\xEAm uma ampla variedade.
+      - Para servi\xE7os espec\xEDficos, seja mais criterioso na avalia\xE7\xE3o.
+    `;
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
+    });
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
+    }
+    const result = JSON.parse(content);
+    result._debug = {
+      content,
+      prompt: prompt.trim(),
+      model: MODEL,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    return result;
+  } catch (error) {
+    console.error("OpenAI API error when validating places:", error);
+    const fallbackResults = places.map((place) => ({
+      placeId: place.placeId,
+      hasProduct: true,
+      confidence: 0.5,
+      reason: "Erro na valida\xE7\xE3o - considerando que o estabelecimento pode ter o produto"
+    }));
+    return {
+      validatedResults: fallbackResults,
+      _debug: {
+        error: String(error),
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    };
+  }
+}
 async function analyzeQueryWithResponse(query, userResponse) {
   try {
     if (query.toLowerCase().includes("coca-cola") || query.toLowerCase().includes("refrigerante")) {
@@ -244,6 +334,26 @@ async function analyzeQueryWithResponse(query, userResponse) {
         ],
         _debug: {
           reason: "Optimized categories for common beverage",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      };
+    }
+    if (query.toLowerCase().includes("p\xE3o") || query.toLowerCase().includes("paes")) {
+      return {
+        categories: [
+          "Padaria",
+          "Panificadora",
+          "Supermercado",
+          "Mercearia",
+          "Caf\xE9",
+          "Loja de Conveni\xEAncia",
+          "Mercado de Alimentos Naturais",
+          "Quitanda",
+          "Mercado de Agricultores",
+          "Confeitaria"
+        ],
+        _debug: {
+          reason: "Optimized categories for bread/bakery items",
           timestamp: (/* @__PURE__ */ new Date()).toISOString()
         }
       };
@@ -309,6 +419,13 @@ var GLOBAL_SITES = [
   { name: "AliExpress", website: "https://www.aliexpress.com" },
   { name: "eBay", website: "https://www.ebay.com" }
 ];
+function clearPlaceSearchCache() {
+  console.log("\u{1F9F9} Limpando cache de busca de lugares...");
+  Object.keys(placeSearchCache).forEach((key) => {
+    delete placeSearchCache[key];
+  });
+  console.log("\u2705 Cache limpo com sucesso!");
+}
 var placeSearchCache = {};
 async function searchPlaces(query, userResponse, latitude, longitude, isPerishable) {
   const results = [];
@@ -340,12 +457,19 @@ async function searchPlaces(query, userResponse, latitude, longitude, isPerishab
       const localResults = await searchLocalPlaces(
         searchTerms,
         latitude,
-        longitude
+        longitude,
+        query,
+        userResponse || ""
       );
       debugData.steps.push({
         step: "Local results",
         count: localResults.length,
-        results: localResults.map((r) => ({ name: r.name, address: r.address }))
+        results: localResults.map((r) => ({
+          name: r.name,
+          address: r.address,
+          hasProduct: r.hasProduct,
+          validationConfidence: r.metadata ? r.metadata.validationConfidence : void 0
+        }))
       });
       results.push(...localResults);
     } else {
@@ -419,114 +543,113 @@ function logGooglePlacesResponse(data, error) {
     resultsCount: data.results?.length || 0
   });
 }
-async function searchLocalPlaces(searchTerms, latitude, longitude) {
-  const results = [];
+var SEARCH_RADII = [250, 500, 750, 1e3, 1500, 2e3];
+var MIN_DESIRED_RESULTS = 5;
+var MAX_ATTEMPTS = 6;
+async function searchLocalPlaces(searchTerms, latitude, longitude, query, userResponse) {
+  const allResults = [];
   const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!googleApiKey) {
     console.error("Google Places API key not found");
-    return results;
+    return allResults;
   }
   try {
     console.log("Searching for local places with terms:", searchTerms);
-    const limitedSearchTerms = searchTerms.slice(0, 3);
-    const searchPromises = limitedSearchTerms.map(async (term) => {
-      const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)},${term}`;
-      const cacheEntry = placeSearchCache[cacheKey];
-      const cacheAge = cacheEntry ? Date.now() - cacheEntry.timestamp : Infinity;
-      const CACHE_TTL = 1e3 * 60 * 30;
-      if (cacheEntry && cacheAge < CACHE_TTL) {
-        console.log(`\u{1F504} Usando resultados em cache para "${term}" (${Math.round(cacheAge / 1e3 / 60)} min atr\xE1s)`);
-        return cacheEntry.results;
+    const limitedSearchTerms = searchTerms.slice(0, 5);
+    let validatedResults = [];
+    let currentRadiusIndex = 0;
+    let attempts = 0;
+    while (validatedResults.length < MIN_DESIRED_RESULTS && currentRadiusIndex < SEARCH_RADII.length && attempts < MAX_ATTEMPTS) {
+      const currentRadius = SEARCH_RADII[currentRadiusIndex];
+      attempts++;
+      console.log(`\u{1F50D} Tentativa ${attempts}: Buscando em raio de ${currentRadius}m...`);
+      const resultsForCurrentRadius = await searchLocalPlacesWithRadius(
+        limitedSearchTerms,
+        latitude,
+        longitude,
+        currentRadius,
+        googleApiKey
+      );
+      if (resultsForCurrentRadius.length === 0) {
+        console.log(`\u{1F504} Nenhum resultado encontrado em raio de ${currentRadius}m. Aumentando raio.`);
+        currentRadiusIndex++;
+        continue;
       }
-      const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
-      url.searchParams.append("location", `${latitude},${longitude}`);
-      url.searchParams.append("radius", "5000");
-      url.searchParams.append("keyword", term);
-      url.searchParams.append("language", "pt-BR");
-      url.searchParams.append("key", googleApiKey);
-      logGooglePlacesRequest(url.toString(), {
-        location: `${latitude},${longitude}`,
-        radius: "5000",
-        keyword: term,
-        language: "pt-BR"
-      });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5e3);
-      try {
-        const response = await fetch(url.toString(), {
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (!response.ok) {
-          throw new Error(`Google Places API error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        logGooglePlacesResponse(data);
-        if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-          const error = `Google Places API error: ${data.status}`;
-          logGooglePlacesResponse(data, error);
-          throw new Error(error);
-        }
-        const formattedResults = data.results.map((place) => ({
-          queryId: 0,
-          // Will be updated when saved to storage
+      const newUniqueResults = resultsForCurrentRadius.filter(
+        (newResult) => !allResults.some(
+          (existingResult) => existingResult.metadata && newResult.metadata && existingResult.metadata.placeId === newResult.metadata.placeId
+        )
+      );
+      if (newUniqueResults.length > 0) {
+        console.log(`\u2705 Encontrados ${newUniqueResults.length} novos resultados em raio de ${currentRadius}m`);
+        allResults.push(...newUniqueResults);
+        const placesToValidate = newUniqueResults.map((place) => ({
+          placeId: place.metadata ? place.metadata.placeId : "",
           name: place.name,
-          category: "local",
-          address: place.vicinity,
-          location: {
-            lat: place.geometry.location.lat,
-            lng: place.geometry.location.lng
-          },
-          rating: place.rating ? place.rating.toString() : void 0,
-          reviews: place.user_ratings_total ? place.user_ratings_total.toString() : void 0,
-          hasProduct: true,
-          // Calculate distance from user (approximate)
-          distance: calculateDistance(
-            latitude,
-            longitude,
-            place.geometry.location.lat,
-            place.geometry.location.lng
-          ),
-          metadata: {
-            placeId: place.place_id,
-            openNow: place.opening_hours?.open_now,
-            types: place.types
-          }
+          category: place.category,
+          types: place.metadata ? place.metadata.types : [],
+          address: place.address || void 0
         }));
-        placeSearchCache[cacheKey] = {
-          results: formattedResults,
-          timestamp: Date.now()
-        };
-        return formattedResults;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        console.error(`Error fetching places for term "${term}":`, error);
-        return [];
+        console.log(`\u{1F916} Validando ${placesToValidate.length} estabelecimentos com IA...`);
+        try {
+          const validationResult = await validatePlacesResults(
+            query,
+            userResponse,
+            placesToValidate
+          );
+          console.log(
+            `\u2705 Valida\xE7\xE3o conclu\xEDda:`,
+            validationResult.validatedResults.filter((r) => r.hasProduct).length,
+            "positivos /",
+            validationResult.validatedResults.filter((r) => !r.hasProduct).length,
+            "negativos"
+          );
+          for (const placeValidation of validationResult.validatedResults) {
+            const matchingPlace = allResults.find(
+              (p) => p.metadata && p.metadata.placeId === placeValidation.placeId
+            );
+            if (matchingPlace) {
+              matchingPlace.hasProduct = placeValidation.hasProduct;
+              if (!matchingPlace.metadata) matchingPlace.metadata = {};
+              matchingPlace.metadata.validationConfidence = placeValidation.confidence;
+              matchingPlace.metadata.validationReason = placeValidation.reason;
+            }
+          }
+          validatedResults = allResults.filter((result) => result.hasProduct);
+          console.log(`\u{1F3AF} Ap\xF3s valida\xE7\xE3o: ${validatedResults.length} resultados v\xE1lidos.`);
+          if (validatedResults.length >= MIN_DESIRED_RESULTS) {
+            console.log(`\u{1F3AF} Atingido o n\xFAmero m\xEDnimo de ${MIN_DESIRED_RESULTS} resultados. Encerrando busca.`);
+            break;
+          }
+        } catch (error) {
+          console.error("Erro ao validar estabelecimentos:", error);
+          validatedResults = allResults;
+          if (validatedResults.length >= MIN_DESIRED_RESULTS) {
+            console.log(`\u{1F3AF} Encontrados ${validatedResults.length} resultados. Encerrando busca (ap\xF3s erro de valida\xE7\xE3o).`);
+            break;
+          }
+        }
       }
-    });
-    const placesArrays = await Promise.all(searchPromises);
-    const allPlaces = placesArrays.flat();
-    const uniqueResults = allPlaces.filter(
-      (place, index, self) => index === self.findIndex(
-        (p) => p.metadata.placeId === place.metadata.placeId
-      )
-    );
-    const sortedResults = uniqueResults.sort((a, b) => {
+      currentRadiusIndex++;
+    }
+    const sortedResults = validatedResults.sort((a, b) => {
       const distanceA = parseDistanceString(a.distance || "");
       const distanceB = parseDistanceString(b.distance || "");
       return distanceA - distanceB;
     });
-    const finalResults = sortedResults.slice(0, 5);
+    const finalResults = sortedResults.slice(0, MIN_DESIRED_RESULTS);
     if (finalResults.length > 0) {
-      finalResults[0].metadata = {
-        ...finalResults[0].metadata,
-        _debugAll: {
-          apiStatus: "OK",
-          coordsUsed: { latitude, longitude },
-          searchTerms,
-          totalResultsFound: allPlaces.length,
-          uniqueResultsFound: uniqueResults.length
-        }
+      if (!finalResults[0].metadata) {
+        finalResults[0].metadata = {};
+      }
+      finalResults[0].metadata._debugAll = {
+        apiStatus: "OK",
+        coordsUsed: { latitude, longitude },
+        searchTerms,
+        totalFound: allResults.length,
+        validatedCount: validatedResults.length,
+        attemptsUsed: attempts,
+        searchRadii: SEARCH_RADII.slice(0, currentRadiusIndex + 1)
       };
     }
     return finalResults;
@@ -534,6 +657,94 @@ async function searchLocalPlaces(searchTerms, latitude, longitude) {
     console.error("Error searching local places:", error);
     return [];
   }
+}
+async function searchLocalPlacesWithRadius(searchTerms, latitude, longitude, radius, googleApiKey) {
+  const searchPromises = searchTerms.map(async (term) => {
+    const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)},${radius},${term}`;
+    const cacheEntry = placeSearchCache[cacheKey];
+    const cacheAge = cacheEntry ? Date.now() - cacheEntry.timestamp : Infinity;
+    const CACHE_TTL = 1e3 * 60 * 30;
+    if (cacheEntry && cacheAge < CACHE_TTL) {
+      console.log(`\u{1F504} Usando resultados em cache para "${term}" em raio de ${radius}m (${Math.round(cacheAge / 1e3 / 60)} min atr\xE1s)`);
+      return cacheEntry.results;
+    }
+    const url = new URL("https://maps.googleapis.com/maps/api/place/nearbysearch/json");
+    url.searchParams.append("location", `${latitude},${longitude}`);
+    url.searchParams.append("radius", radius.toString());
+    url.searchParams.append("keyword", term);
+    url.searchParams.append("language", "pt-BR");
+    url.searchParams.append("key", googleApiKey);
+    logGooglePlacesRequest(url.toString(), {
+      location: `${latitude},${longitude}`,
+      radius: radius.toString(),
+      keyword: term,
+      language: "pt-BR"
+    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5e3);
+    try {
+      const response = await fetch(url.toString(), { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`Google Places API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      logGooglePlacesResponse(data);
+      if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+        const error = `Google Places API error: ${data.status}`;
+        logGooglePlacesResponse(data, error);
+        throw new Error(error);
+      }
+      const formattedResults = data.results.map((place) => ({
+        queryId: 0,
+        // Será atualizado quando salvo no storage
+        name: place.name,
+        category: "local",
+        address: place.vicinity,
+        location: {
+          lat: place.geometry.location.lat,
+          lng: place.geometry.location.lng
+        },
+        rating: place.rating ? place.rating.toString() : void 0,
+        reviews: place.user_ratings_total ? place.user_ratings_total.toString() : void 0,
+        hasProduct: true,
+        // Por padrão assumimos que tem o produto
+        // Calcular distância aproximada
+        distance: calculateDistance(
+          latitude,
+          longitude,
+          place.geometry.location.lat,
+          place.geometry.location.lng
+        ),
+        metadata: {
+          placeId: place.place_id,
+          openNow: place.opening_hours?.open_now,
+          types: place.types,
+          searchRadius: radius,
+          // Armazenar o raio usado para encontrar este resultado
+          searchTerm: term
+          // Armazenar o termo que levou a este resultado
+        }
+      }));
+      placeSearchCache[cacheKey] = {
+        results: formattedResults,
+        timestamp: Date.now()
+      };
+      return formattedResults;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error(`Error fetching places for term "${term}" with radius ${radius}m:`, error);
+      return [];
+    }
+  });
+  const placesArrays = await Promise.all(searchPromises);
+  const allPlaces = placesArrays.flat();
+  const uniqueResults = allPlaces.filter(
+    (place, index, self) => index === self.findIndex(
+      (p) => p.metadata && place.metadata && p.metadata.placeId === place.metadata.placeId
+    )
+  );
+  return uniqueResults;
 }
 function generateNationalResults(query, userResponse) {
   const shuffled = [...NATIONAL_SITES].sort(() => 0.5 - Math.random());
@@ -698,6 +909,26 @@ var searchResponseSchema = z.object({
 // server/routes.ts
 import { ZodError } from "zod";
 async function registerRoutes(app2) {
+  app2.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  });
+  app2.post("/api/clear-cache", (_req, res) => {
+    try {
+      clearPlaceSearchCache();
+      res.json({
+        status: "ok",
+        message: "Cache limpo com sucesso",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Erro ao limpar cache:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Erro ao limpar cache",
+        error: String(error)
+      });
+    }
+  });
   app2.post("/api/search", async (req, res) => {
     try {
       console.log("\u{1F4E8} Recebendo requisi\xE7\xE3o de busca:", JSON.stringify(req.body));
@@ -831,11 +1062,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { fileURLToPath } from "url";
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = path.dirname(__filename);
 var isProduction = process.env.NODE_ENV === "production";
 var isReplit = process.env.REPL_ID !== void 0;
+var isGitHubPages = process.env.DEPLOY_TARGET === "github";
 var vite_config_default = defineConfig(async () => ({
-  base: "/Saviana/",
-  // Caminho correto para GitHub Pages
+  base: isGitHubPages ? "/Saviana/" : "/",
+  // Corrige o caminho base para Railway
   plugins: [
     react(),
     runtimeErrorOverlay(),
@@ -845,14 +1080,14 @@ var vite_config_default = defineConfig(async () => ({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+      "@": path.resolve(__dirname, "client", "src"),
+      "@shared": path.resolve(__dirname, "shared"),
+      "@assets": path.resolve(__dirname, "attached_assets")
     }
   },
-  root: path.resolve(import.meta.dirname, "client"),
+  root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true
   }
 }));
@@ -913,66 +1148,199 @@ async function setupVite(app2, server) {
     }
   });
 }
-function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
+
+// server/staticServe.ts
+import express2 from "express";
+import fs2 from "fs";
+import path3 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var __filename2 = fileURLToPath2(import.meta.url);
+var __dirname2 = path3.dirname(__filename2);
+var resolvedCwd = (() => {
+  try {
+    const cwd = process.cwd();
+    return typeof cwd === "string" && cwd ? cwd : void 0;
+  } catch (e) {
+    console.error("\u274C Error getting process.cwd():", e.message);
+    return void 0;
   }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
+})();
+console.log(`[StaticServe Init Debug] __dirname: "${__dirname2}", process.cwd(): "${resolvedCwd}"`);
+function serveStaticProd(app2) {
+  try {
+    const possiblePaths = [
+      path3.resolve(__dirname2, "../dist/public"),
+      path3.resolve(__dirname2, "../public"),
+      path3.resolve(__dirname2, "../../public")
+    ];
+    if (resolvedCwd) {
+      possiblePaths.push(
+        path3.resolve(resolvedCwd, "dist/public"),
+        path3.resolve(resolvedCwd, "public")
+      );
+    }
+    console.log("[StaticServe Debug] Checking static directories:", possiblePaths);
+    const distPath = possiblePaths.find((p) => {
+      try {
+        const stat = fs2.statSync(p);
+        return stat.isDirectory();
+      } catch {
+        return false;
+      }
+    });
+    if (!distPath) {
+      console.warn("\u26A0\uFE0F [StaticServe]: No valid static directory found. Skipping static file serving.");
+      return;
+    }
+    console.log(`\u{1F4C1} [StaticServe] Serving static files from: ${distPath}`);
+    app2.use(express2.static(distPath));
+    const indexPath = path3.join(distPath, "index.html");
+    if (fs2.existsSync(indexPath)) {
+      app2.use("*", (_req, res) => {
+        res.sendFile(indexPath);
+      });
+    } else {
+      console.warn(`\u26A0\uFE0F [StaticServe]: index.html not found at ${indexPath}`);
+    }
+  } catch (error) {
+    console.error("\u274C Error in serveStaticProd:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    });
+    console.warn("[StaticServe] Proceeding without static file serving.");
+  }
 }
 
 // server/index.ts
-var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
+import { fileURLToPath as fileURLToPath3 } from "url";
+import path4 from "path";
+if (import.meta && typeof import.meta.url === "string") {
+  if (typeof import.meta.dirname !== "string" || !import.meta.dirname) {
+    try {
+      const __filename3 = fileURLToPath3(import.meta.url);
+      const __dirname3 = path4.dirname(__filename3);
+      Object.defineProperty(import.meta, "dirname", {
+        value: __dirname3,
+        writable: false,
+        // geralmente polyfills são não-reescritos
+        enumerable: true,
+        configurable: true
+      });
+      console.log(`[Polyfill] Adicionado import.meta.dirname = ${__dirname3}`);
+    } catch (e) {
+      console.warn(`[Polyfill] Falha ao criar import.meta.dirname a partir de import.meta.url (${import.meta.url}):`, e);
+    }
+  } else {
+    console.log(`[Polyfill] import.meta.dirname j\xE1 existe: ${import.meta.dirname}. Polyfill n\xE3o aplicado.`);
+  }
+} else {
+  console.warn("[Polyfill] import.meta.url n\xE3o est\xE1 dispon\xEDvel ou n\xE3o \xE9 uma string. N\xE3o foi poss\xEDvel tentar o polyfill para import.meta.dirname.");
+}
+var allowedOrigins = [
+  // Origens de desenvolvimento
+  "http://localhost:3000",
+  // Se seu frontend roda na 3000
+  "http://localhost:5000",
+  // Se seu frontend roda na 5000 ou para testes diretos
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5000",
+  // Adicione a origem do seu frontend no GitHub Pages
+  "https://1daviviana.github.io",
+  // Origens do Replit (expressão regular para cobrir subdomínios dinâmicos)
+  /\.replit\.dev$/,
+  // Origens Railway (expressão regular para cobrir subdomínios dinâmicos)
+  /\.railway\.app$/
+];
+var corsOptions = {
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some((allowedOrigin) => {
+      if (typeof allowedOrigin === "string") {
+        return allowedOrigin === origin;
+      } else if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Origem bloqueada: ${origin}`);
+      callback(new Error(`A origem ${origin} n\xE3o \xE9 permitida por CORS.`));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  // Adicionar outros métodos se necessário
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+  // Adicionar outros headers se necessário
+};
+var app = express3();
+app.set("trust proxy", 1);
+app.use(cors(corsOptions));
+app.use(express3.json());
+app.use(express3.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
-  const path3 = req.path;
-  let capturedJsonResponse = void 0;
-  const originalResJson = res.json;
-  res.json = function(bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path3.startsWith("/api")) {
-      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "\u2026";
-      }
-      log(logLine);
-    }
+    const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    const originHeader = req.headers.origin || "N/A";
+    console.log(
+      `[Request] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms - Origin: ${originHeader} - IP: ${clientIp}`
+    );
   });
   next();
 });
 (async () => {
   const server = await registerRoutes(app);
-  app.use((err, _req, res, _next) => {
+  app.use((err, req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
+    console.error("\u274C Erro capturado pelo manipulador de erros:", {
+      status,
+      message,
+      // Evitar logar o stack completo de erros CORS "Não permitido por CORS" para não poluir os logs
+      stack: err.message && err.message.includes("N\xE3o permitido por CORS") ? "CORS rejection" : err.stack,
+      path: req.path,
+      method: req.method,
+      origin: req.headers.origin,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    res.status(status).json({
+      error: {
+        message,
+        status
+      },
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      path: req.path
+    });
   });
-  if (app.get("env") === "development") {
+  const currentEnv = process.env.NODE_ENV || "development";
+  log(`\u{1F527} Ambiente atual: ${currentEnv}`);
+  if (currentEnv === "development") {
+    log("\u{1F6E0}\uFE0F Configurando Vite para desenvolvimento...");
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    log("\u{1F4E6} Servindo arquivos est\xE1ticos para produ\xE7\xE3o...");
+    serveStaticProd(app);
   }
-  const port = 5e3;
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5e3;
   server.listen({
+    // O servidor HTTP (retornado por registerRoutes) é quem deve escutar
     port,
-    host: "0.0.0.0",
-    reusePort: true
+    host: "0.0.0.0"
+    // Importante para Railway e containers
+    // reusePort: true, // Geralmente não é necessário e pode causar problemas em alguns cenários. Remova se não tiver um motivo específico.
   }, () => {
-    log(`serving on port ${port}`);
+    log(`\u{1F680} Servidor rodando em http://0.0.0.0:${port}`);
+    if (currentEnv === "production") {
+      log(`\u{1F4A1} Em produ\xE7\xE3o, certifique-se que seu app responde a health checks na porta ${port}.`);
+    }
   });
-})();
+})().catch((err) => {
+  console.error("\u{1F6A8} Falha cr\xEDtica ao iniciar o servidor:", err);
+  process.exit(1);
+});

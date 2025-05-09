@@ -10,9 +10,10 @@ const __dirname = path.dirname(__filename);
 
 const isProduction = process.env.NODE_ENV === "production";
 const isReplit = process.env.REPL_ID !== undefined;
+const isGitHubPages = process.env.DEPLOY_TARGET === "github";
 
 export default defineConfig(async () => ({
-  base: "/Saviana/", // Caminho correto para GitHub Pages
+  base: isGitHubPages ? "/Saviana/" : "/", // Corrige o caminho base para Railway
   plugins: [
     react(),
     runtimeErrorOverlay(),
@@ -33,7 +34,7 @@ export default defineConfig(async () => ({
   },
   root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist/public"), // compatível com seu serveStaticProd
+    outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
 }));
