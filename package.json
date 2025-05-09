@@ -4,6 +4,9 @@
   "type": "module",
   "license": "MIT",
   "homepage": "https://1daviviana.github.io/Saviana",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
@@ -58,6 +61,7 @@
     "drizzle-orm": "^0.39.1",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.6.0",
+    "esbuild": "^0.25.0",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "framer-motion": "^11.13.1",
@@ -80,6 +84,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
+    "vite": "^5.4.19",
     "wouter": "^3.7.0",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
@@ -102,13 +107,11 @@
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
-    "esbuild": "^0.25.0",
     "gh-pages": "^6.3.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
-    "typescript": "5.6.3",
-    "vite": "^5.4.19"
+    "typescript": "5.6.3"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
