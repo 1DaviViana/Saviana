@@ -29,8 +29,11 @@ jobs:
 
       - name: Build Frontend
         env:
-          # VITE_API_URL é para o código do seu aplicativo React saber onde está o backend
+          # Chave para o backend (Railway)
           VITE_API_URL: https://web-production-76420.up.railway.app
+          # Chave para o Google Maps JavaScript API (frontend) - lida do segredo do GitHub
+          # -----> LINHA ADICIONADA ABAIXO <-----
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
           # Executa o comando vite build DIRETAMENTE, passando a base correta
           # Usamos npx para garantir que o vite instalado localmente seja encontrado
