@@ -7,7 +7,7 @@ on:
     paths:
       - 'client/**'
       - 'shared/**'
-      - '.github/workflows/deploy-frontend.yml' # Monitora a si mesmo para mudanças
+      - '.github/workflows/deploy-frontend.yml'
       - 'package.json'
       - 'vite.config.ts'
 
@@ -29,20 +29,23 @@ jobs:
 
       - name: Build Frontend
         env:
-          # Chave para o backend (Railway)
           VITE_API_URL: https://web-production-76420.up.railway.app
-          # Chave para o Google Maps JavaScript API (frontend) - lida do segredo do GitHub
-          # -----> LINHA ADICIONADA ABAIXO <-----
           VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
-          # Executa o comando vite build DIRETAMENTE, passando a base correta
-          # Usamos npx para garantir que o vite instalado localmente seja encontrado
-          npx vite build --base=/Saviana/
+          echo "==> Iniciando build do Vite..."
+          # Executa o build com a flag --debug para mais informações
+          npx vite build --base=/Saviana/ --debug
+          echo "==> Build do Vite concluído."
+          echo "==> Verificando o conteúdo de dist/public/index.html gerado:"
+          # Lista os arquivos gerados para confirmação
+          ls -l dist/public/assets
+          # Tenta imprimir as linhas relevantes do index.html gerado
+          grep -E 'rel="stylesheet"|src="/assets/|src="/Saviana/assets/' dist/public/index.html || echo "AVISO: index.html gerado não encontrado ou padrão não encontrado."
+          echo "==> Verificação do index.html concluída."
+
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # A pasta que o Vite constrói (definida em vite.config.ts como dist/public)
           folder: dist/public
-          # O branch para onde será feito o deploy
           branch: gh-pages
