@@ -229,15 +229,15 @@ export function useGeolocation() {
                 onError,
                 { 
                   maximumAge: 30000, // 30 segundos
-                  timeout: LOCATION_TIMEOUT - 1000, // 1 segundo a menos que o timeout geral
-                  enableHighAccuracy: true // Tentar obter localização de alta precisão
+                  timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
+                  enableHighAccuracy: false // Tentar obter localização de alta precisão
                 }
               );
             },
             { 
               maximumAge: 60000, // 1 minuto
-              timeout: LOCATION_TIMEOUT - 2000, // 2 segundos a menos que o timeout geral
-              enableHighAccuracy: true // Tentar obter localização de alta precisão 
+              timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
+              enableHighAccuracy: false // Tentar obter localização de alta precisão 
             }
           );
         });
