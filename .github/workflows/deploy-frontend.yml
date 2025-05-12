@@ -32,10 +32,9 @@ jobs:
           # VITE_API_URL é para o código do seu aplicativo React saber onde está o backend
           VITE_API_URL: https://web-production-76420.up.railway.app
         run: |
-          # Adiciona --base=/Saviana/ diretamente ao comando de build do Vite
-          # O primeiro '--' é para passar argumentos para o script 'build' do npm,
-          # e o segundo '--base' é o argumento para o comando 'vite build'
-          npm run build -- --base=/Saviana/
+          # Executa o comando vite build DIRETAMENTE, passando a base correta
+          # Usamos npx para garantir que o vite instalado localmente seja encontrado
+          npx vite build --base=/Saviana/
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
