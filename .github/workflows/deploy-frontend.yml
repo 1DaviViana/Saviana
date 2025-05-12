@@ -30,6 +30,7 @@ jobs:
       - name: Build Frontend
         env:
           VITE_API_URL: https://web-production-76420.up.railway.app
+          DEPLOY_TARGET: github # <-- ADICIONE ESTA LINHA
         run: |
           npm run build
 
