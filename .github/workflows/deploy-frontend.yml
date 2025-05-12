@@ -7,7 +7,7 @@ on:
     paths:
       - 'client/**'
       - 'shared/**'
-      - '.github/workflows/deploy-frontend.yml'
+      - '.github/workflows/deploy-frontend.yml' # Monitora a si mesmo para mudanças
       - 'package.json'
       - 'vite.config.ts'
 
@@ -29,13 +29,18 @@ jobs:
 
       - name: Build Frontend
         env:
+          # VITE_API_URL é para o código do seu aplicativo React saber onde está o backend
           VITE_API_URL: https://web-production-76420.up.railway.app
-          DEPLOY_TARGET: github # <-- ADICIONE ESTA LINHA
         run: |
-          npm run build
+          # Adiciona --base=/Saviana/ diretamente ao comando de build do Vite
+          # O primeiro '--' é para passar argumentos para o script 'build' do npm,
+          # e o segundo '--base' é o argumento para o comando 'vite build'
+          npm run build -- --base=/Saviana/
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
+          # A pasta que o Vite constrói (definida em vite.config.ts como dist/public)
           folder: dist/public
+          # O branch para onde será feito o deploy
           branch: gh-pages
