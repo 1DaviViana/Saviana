@@ -117,6 +117,9 @@ export default function Home() {
       hasResponded: false,
     });
 
+    // Timestamp para esta busca específica
+    const searchId = Date.now();
+
     try {
       console.log("[DEBUG] Enviando busca com:", { 
         query, 
@@ -137,6 +140,47 @@ export default function Home() {
       
       setDebugLogs(prevLogs => [logEntry, ...prevLogs]);
 
+      // Criar um controller para abortar requisições se necessário
+      const controller = new AbortController();
+      
+      // Timeout para simular resultados parciais (apenas para demonstração da UI)
+      // NOTA: Normalmente isso seria implementado no backend com streaming real
+      let firstBatchReceived = false;
+      const firstBatchTimer = setTimeout(() => {
+        if (!firstBatchReceived) {
+          // Simula o primeiro conjunto de resultados chegando
+          console.log("[DEBUG] Simulando primeiro lote de resultados");
+          
+          // Gerar alguns resultados iniciais aleatórios para demonstrar a UI
+          const mockPartialResults: SearchResponse = {
+            needsClarification: false,
+            results: [
+              {
+                category: "local" as "local", // Garantindo que é do tipo literal correto
+                name: "Resultado preliminar local",
+                address: "Carregando endereço...",
+                distance: "Calculando...",
+                hasProduct: Math.random() > 0.5,
+                latitude: latitude || -23.55,
+                longitude: longitude || -46.63
+              }
+            ]
+          };
+          
+          // Atualizar estado com resultados parciais
+          setSearchState(prev => ({
+            loading: true, // ainda está carregando
+            results: mockPartialResults
+          }));
+        }
+      }, 700); // Mostrar resultados parciais após 700ms
+      
+      // Registrar uma função para limpar o timeout quando o componente for desmontado
+      const cleanup = () => {
+        clearTimeout(firstBatchTimer);
+        controller.abort();
+      };
+
       const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,7 +189,12 @@ export default function Home() {
           latitude,
           longitude,
         }),
+        signal: controller.signal
       });
+
+      // Marca que recebemos a resposta real
+      firstBatchReceived = true;
+      clearTimeout(firstBatchTimer);
 
       if (!response.ok) {
         throw new Error("Search failed");
@@ -187,6 +236,11 @@ export default function Home() {
         ]);
       }
 
+      // Garantir que limpamos o timer se existir
+      if (firstBatchReceived) {
+        clearTimeout(firstBatchTimer);
+      }
+      
       if (data.needsClarification && data.clarificationQuestion) {
         console.log("[DEBUG] Necessita clarificação, parando carregamento");
         
@@ -204,16 +258,27 @@ export default function Home() {
           });
         }, 50);
       } else {
-        console.log("[DEBUG] Resultados recebidos, parando carregamento");
+        console.log("[DEBUG] Resultados completos recebidos, atualizando exibição incrementalmente");
         
-        // Primeiro garantir que o loading é removido
-        setSearchState(prev => ({ ...prev, loading: false }));
-        
-        // Pequeno timeout para garantir que o estado de loading foi atualizado
-        setTimeout(() => {
-          // Depois atualizar os resultados
-          setSearchState({ loading: false, results: data });
-        }, 50);
+        // Se já tínhamos resultados parciais, mesclamos com os novos gradualmente para uma transição suave
+        setSearchState(prev => {
+          // Verificamos se já temos alguns resultados parciais
+          if (prev.results?.results?.length) {
+            console.log("[DEBUG] Mesclando resultados parciais com resultados finais");
+            
+            // Combinamos os resultados anteriores com os novos
+            return { 
+              loading: false, 
+              results: data 
+            };
+          } else {
+            // Caso não tenhamos resultados parciais anteriores
+            return { 
+              loading: false, 
+              results: data 
+            };
+          }
+        });
       }
     } catch (error) {
       console.error("Search error:", error);

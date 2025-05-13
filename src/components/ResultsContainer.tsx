@@ -21,19 +21,16 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
     timestamp: new Date().toISOString().substring(11, 23)
   });
   
-  // **ABORDAGEM COMPLETAMENTE NOVA**
-  // Se não estiver carregando ou não houver resultados, não mostre nada
-  if (!loading) {
-    // Se não tiver resultados para mostrar e não precisar de clarificação, não mostra nada
-    if (!results || (!results.results && !results.needsClarification)) {
-      console.log("[DEBUG] Sem resultados e sem clarificação - retornando null");
-      return null;
-    }
-    
-    // Se tiver resultados para mostrar, continue o fluxo normal (cai no return final)
-  } else {
-    // Se estiver carregando, mostra APENAS o spinner e nada mais
-    console.log("[DEBUG] Mostrando APENAS spinner, pois loading =", loading);
+  // **NOVA ABORDAGEM COM RESULTADOS INCREMENTAIS**
+  // Se não estiver carregando E não tiver resultados para mostrar e não precisar de clarificação, não mostra nada
+  if (!loading && (!results || (!results.results && !results.needsClarification))) {
+    console.log("[DEBUG] Sem resultados e sem clarificação - retornando null");
+    return null;
+  }
+  
+  // Se estiver carregando e ainda não tem nenhum resultado para mostrar
+  if (loading && (!results || !results.results || results.results.length === 0)) {
+    console.log("[DEBUG] Mostrando APENAS spinner, sem resultados ainda");
     return (
       <div className="w-full max-w-lg mx-auto fade-in">
         <div className="text-center py-5">
@@ -48,6 +45,8 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
     );
   }
   
+  // Se chegou aqui, então temos resultados para mostrar (mesmo que ainda esteja carregando mais)
+  
   // Se chegou até aqui, significa que não está carregando E tem resultados para mostrar
   // Prepare os dados para renderização
   const localResults = results?.results?.filter(r => r.category === "local") || [];
@@ -59,11 +58,27 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
   return (
     <div className="w-full max-w-lg mx-auto fade-in">
       <div className="results-list">
+        {/* Indicador de carregamento no topo quando temos resultados parciais */}
+        {loading && hasAnyResults && (
+          <div className="text-center py-2 mb-3">
+            <div className="inline-flex items-center">
+              <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-xs text-gray-600">Carregando mais resultados...</span>
+            </div>
+          </div>
+        )}
+
         {hasAnyResults ? (
           <>            
             {localResults.length > 0 && (
               <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-2">{localResults.length} estabelecimentos próximos</p>
+                <p className="text-sm text-gray-500 mb-2">
+                  {localResults.length} estabelecimentos próximos
+                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                </p>
                 
                 {/* Map section */}
                 {localResults.length > 0 && (
@@ -74,7 +89,7 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
                 
                 {/* Local results list */}
                 {localResults.map((result, index) => (
-                  <Card key={`local-${index}`} className="mb-2 hover:shadow-md transition duration-200">
+                  <Card key={`local-${index}-${result.name}`} className="mb-2 hover:shadow-md transition duration-200">
                     <CardContent className="p-3">
                       <div className="flex justify-between items-start">
                         <div>
@@ -98,11 +113,14 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
             
             {nationalResults.length > 0 && (
               <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-2">Opções online nacionais</p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Opções online nacionais
+                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                </p>
                 
                 {/* National results list */}
                 {nationalResults.map((result, index) => (
-                  <Card key={`national-${index}`} className="mb-2 hover:shadow-md transition duration-200">
+                  <Card key={`national-${index}-${result.name}`} className="mb-2 hover:shadow-md transition duration-200">
                     <CardContent className="p-3">
                       <div className="flex justify-between items-start">
                         <div>
@@ -130,11 +148,14 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
             
             {globalResults.length > 0 && (
               <div>
-                <p className="text-sm text-gray-500 mb-2">Opções internacionais</p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Opções internacionais
+                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                </p>
                 
                 {/* Global results list */}
                 {globalResults.map((result, index) => (
-                  <Card key={`global-${index}`} className="mb-2 hover:shadow-md transition duration-200">
+                  <Card key={`global-${index}-${result.name}`} className="mb-2 hover:shadow-md transition duration-200">
                     <CardContent className="p-3">
                       <div className="flex justify-between items-start">
                         <div>
@@ -161,9 +182,11 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
             )}
           </>
         ) : (
-          <div className="text-center py-4">
-            <h4 className="text-sm text-gray-500">Nenhum resultado encontrado</h4>
-          </div>
+          !loading && (
+            <div className="text-center py-4">
+              <h4 className="text-sm text-gray-500">Nenhum resultado encontrado</h4>
+            </div>
+          )
         )}
       </div>
     </div>
