@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useGeolocation, PermissionStatus } from '../hooks/use-geolocation'; // Ajuste o caminho se necessário
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { MapPin } from 'lucide-react';
 
 /**
  * Componente minimalista que exibe o status atual da geolocalização
@@ -11,11 +15,17 @@ export function GeolocationStatus() {
     source, // 'browser', 'ip', ou undefined/null
     permissionStatus, // Objeto/Enum como PermissionStatus.GRANTED, DENIED, PROMPT
     error,   // String de erro ou null
-    addressLine // Linha de endereço (rua mais próxima)
+    addressLine, // Linha de endereço (rua mais próxima)
+    setCustomLocation // Função para definir uma localização personalizada
   } = useGeolocation();
 
   // Estado para verificar se há resultados de pesquisa ativos
   const [hasSearchResults, setHasSearchResults] = useState(false);
+  
+  // Estado para controlar o diálogo de localização
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [cep, setCep] = useState('');
+  const [address, setAddress] = useState('');
 
   // --- Efeito para observar resultados de pesquisa ---
   useEffect(() => {

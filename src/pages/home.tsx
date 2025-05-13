@@ -385,7 +385,22 @@ export default function Home() {
           <UserCreditsDisplay credits={100} />
         </div>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Saviana</h1>
+          <button 
+            onClick={() => {
+              // Resetar estado de busca, mantendo a localização
+              setSearchState({ loading: false, results: null });
+              setConversation({
+                visible: false,
+                question: "",
+                userResponse: "",
+                hasResponded: false,
+              });
+              setSearchQuery("");
+            }}
+            className="text-2xl font-bold text-primary hover:text-primary/90 transition duration-200"
+          >
+            Saviana
+          </button>
         </div>
       </header>
 
