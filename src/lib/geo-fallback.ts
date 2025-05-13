@@ -69,7 +69,7 @@ export async function getNearestAddress(latitude: number, longitude: number): Pr
       params: {
         latlng: { lat: latitude, lng: longitude },
         key: 'AIzaSyA5YORj7HlZUQ7Ftafulh05Z6cvLk3qvr4',
-        language: 'pt',
+        language: undefined,
         result_type: [],
       }
     });

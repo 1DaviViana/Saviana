@@ -346,24 +346,59 @@ export function useGeolocation() {
         const position = await geolocationPromise;
         
         console.debug('[DEBUG] Posição obtida do navegador, atualizando estado');
-        setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          error: null,
-          loading: false,
-          source: 'browser',
-          errorCode: undefined,
-          timestamp: position.timestamp,
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude,
-          altitudeAccuracy: position.coords.altitudeAccuracy,
-          heading: position.coords.heading,
-          speed: position.coords.speed,
-          lastAttempt: now,
-          attempts: state.attempts + 1,
-          cooldown: false,
-          permissionStatus,
-        });
+        
+        // Tenta obter o endereço da rua mais próxima
+        try {
+          // Importação dinâmica para não afetar o carregamento inicial
+          const { getNearestAddress } = await import('../lib/geo-fallback');
+          const streetAddress = await getNearestAddress(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          
+          console.debug('[DEBUG] Endereço mais próximo:', streetAddress || 'Indisponível');
+          
+          setState({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            error: null,
+            loading: false,
+            source: 'browser',
+            errorCode: undefined,
+            timestamp: position.timestamp,
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
+            heading: position.coords.heading,
+            speed: position.coords.speed,
+            lastAttempt: now,
+            attempts: state.attempts + 1,
+            cooldown: false,
+            permissionStatus,
+            addressLine: streetAddress
+          });
+        } catch (error) {
+          console.debug('[DEBUG] Erro ao buscar endereço:', error);
+          
+          setState({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            error: null,
+            loading: false,
+            source: 'browser',
+            errorCode: undefined,
+            timestamp: position.timestamp,
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
+            heading: position.coords.heading,
+            speed: position.coords.speed,
+            lastAttempt: now,
+            attempts: state.attempts + 1,
+            cooldown: false,
+            permissionStatus
+          });
+        }
         
         console.debug('[DEBUG] Usando localização do navegador com sucesso');
         return;
