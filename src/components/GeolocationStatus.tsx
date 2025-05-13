@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { MapPin } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 
 /**
  * Componente minimalista que exibe o status atual da geolocalização
@@ -26,6 +27,12 @@ export function GeolocationStatus() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cep, setCep] = useState('');
   const [address, setAddress] = useState('');
+  
+  // Estado para controlar o carregamento durante as buscas
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(false);
+  
+  const { toast } = useToast();
 
   // --- Efeito para observar resultados de pesquisa ---
   useEffect(() => {
@@ -92,15 +99,29 @@ export function GeolocationStatus() {
 
   // Função para buscar localização por CEP
   const handleLocationFromCep = async () => {
-    if (!cep) return;
+    if (!cep) {
+      toast({
+        title: "CEP obrigatório",
+        description: "Por favor, informe um CEP para buscar",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
+      setLoadingCep(true);
+      
       // Limpar o CEP para ficar apenas com números
       const cleanCep = cep.replace(/\D/g, '');
       
       // Validar o CEP (deve ter 8 dígitos)
       if (cleanCep.length !== 8) {
-        console.error('CEP inválido');
+        toast({
+          title: "CEP inválido",
+          description: "O CEP deve conter 8 dígitos",
+          variant: "destructive"
+        });
+        setLoadingCep(false);
         return;
       }
       
@@ -109,14 +130,19 @@ export function GeolocationStatus() {
       const data = await response.json();
       
       if (data.erro) {
-        console.error('CEP não encontrado');
+        toast({
+          title: "CEP não encontrado",
+          description: "Não foi possível encontrar este CEP. Verifique se está correto.",
+          variant: "destructive"
+        });
+        setLoadingCep(false);
         return;
       }
       
       // Buscar as coordenadas do endereço usando a API Nominatim do OpenStreetMap
       // Esta é uma API de geocoding gratuita que não requer API key
       const geocodeResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?street=${data.logradouro}&city=${data.localidade}&state=${data.uf}&country=Brazil&format=json&limit=1`,
+        `https://nominatim.openstreetmap.org/search?street=${encodeURIComponent(data.logradouro || '')}&city=${encodeURIComponent(data.localidade)}&state=${encodeURIComponent(data.uf)}&country=Brazil&format=json&limit=1`,
         {
           headers: {
             'User-Agent': 'Saviana Location Search App' // Nominatim requer um User-Agent
@@ -130,26 +156,52 @@ export function GeolocationStatus() {
         const { lat, lon } = geocodeData[0];
         
         // Formatamos o endereço para display
-        const addressDisplay = `${data.logradouro}, ${data.bairro}, ${data.localidade}-${data.uf}`;
+        const addressDisplay = `${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade}-${data.uf}`;
         
         // Chamamos a função de set custom location
         setCustomLocation(parseFloat(lat), parseFloat(lon), addressDisplay);
         
         // Fechamos o diálogo
         setDialogOpen(false);
+        
+        toast({
+          title: "Localização atualizada",
+          description: `Localização definida para: ${addressDisplay}`,
+          variant: "default"
+        });
       } else {
-        console.error('Não foi possível obter as coordenadas para este CEP');
+        toast({
+          title: "Endereço não localizado",
+          description: "Não foi possível obter coordenadas para este CEP",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao buscar localização:', error);
+      toast({
+        title: "Erro ao buscar localização",
+        description: "Ocorreu um erro ao tentar buscar as coordenadas deste CEP",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingCep(false);
     }
   };
   
   // Função para buscar localização por endereço
   const handleLocationFromAddress = async () => {
-    if (!address) return;
+    if (!address) {
+      toast({
+        title: "Endereço obrigatório",
+        description: "Por favor, informe um endereço para buscar",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
+      setLoadingAddress(true);
+      
       // Buscar as coordenadas do endereço usando a API Nominatim do OpenStreetMap
       const geocodeResponse = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
@@ -170,11 +222,28 @@ export function GeolocationStatus() {
         
         // Fechamos o diálogo
         setDialogOpen(false);
+        
+        toast({
+          title: "Localização atualizada",
+          description: `Localização definida para: ${display_name}`,
+          variant: "default"
+        });
       } else {
-        console.error('Não foi possível obter as coordenadas para este endereço');
+        toast({
+          title: "Endereço não encontrado",
+          description: "Não foi possível encontrar as coordenadas para este endereço",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao buscar localização:', error);
+      toast({
+        title: "Erro ao buscar localização",
+        description: "Ocorreu um erro ao tentar buscar as coordenadas deste endereço",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingAddress(false);
     }
   };
 
@@ -235,9 +304,19 @@ export function GeolocationStatus() {
                   onClick={handleLocationFromCep}
                   className="whitespace-nowrap"
                   size="sm"
+                  disabled={loadingCep || loadingAddress}
                 >
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Buscar
+                  {loadingCep ? (
+                    <>
+                      <span className="h-4 w-4 mr-1 animate-spin inline-block rounded-full border-2 border-current border-t-transparent" />
+                      Buscando...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Buscar
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -258,9 +337,19 @@ export function GeolocationStatus() {
                   onClick={handleLocationFromAddress}
                   className="whitespace-nowrap"
                   size="sm"
+                  disabled={loadingCep || loadingAddress}
                 >
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Buscar
+                  {loadingAddress ? (
+                    <>
+                      <span className="h-4 w-4 mr-1 animate-spin inline-block rounded-full border-2 border-current border-t-transparent" />
+                      Buscando...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Buscar
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
