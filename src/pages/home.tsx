@@ -42,7 +42,8 @@ export default function Home() {
     data: any;
   }>>([]);
 
-  const { latitude, longitude, loading: geoLoading, error: geoError, source, requestGeolocation } = useGeolocation();
+  // Incluindo setCustomLocation para permitir alteração da localização a partir do componente GeolocationStatus
+  const { latitude, longitude, loading: geoLoading, error: geoError, source, requestGeolocation, setCustomLocation } = useGeolocation();
   
   // Debug para ver se está pegando a localização
   console.log("Geolocalização:", { 
@@ -407,7 +408,7 @@ export default function Home() {
       <SearchBar onSearch={handleSearch} />
       
       {/* Indicador de status da geolocalização - posicionado após a barra de pesquisa */}
-      <GeolocationStatus />
+      <GeolocationStatus setCustomLocation={setCustomLocation} />
 
       {conversation.visible && (
         <ConversationContainer
