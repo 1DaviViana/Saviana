@@ -18,6 +18,7 @@ interface GeolocationState {
   attempts: number;
   cooldown: boolean;
   permissionStatus: 'granted' | 'denied' | 'prompt' | 'unknown';
+  addressLine?: string; // Linha do endereço (rua mais próxima)
 }
 
 // Enum para status das permissões

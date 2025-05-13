@@ -69,8 +69,8 @@ export async function getNearestAddress(latitude: number, longitude: number): Pr
       params: {
         latlng: { lat: latitude, lng: longitude },
         key: 'AIzaSyA5YORj7HlZUQ7Ftafulh05Z6cvLk3qvr4',
-        language: 'pt-BR',
-        result_type: ['route', 'street_address'],
+        language: 'pt',
+        result_type: [],
       }
     });
 
@@ -83,8 +83,8 @@ export async function getNearestAddress(latitude: number, longitude: number): Pr
       const firstResult = response.data.results[0];
       
       // Extrai apenas o nome da rua (primeiro componente do endereço formatado)
-      const streetName = firstResult.address_components.find(
-        component => component.types.includes('route')
+      const streetName = firstResult.address_components?.find(
+        component => component.types.some(type => type === 'route')
       )?.long_name;
       
       if (streetName) {

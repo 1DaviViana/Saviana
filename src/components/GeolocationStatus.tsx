@@ -10,14 +10,12 @@ export function GeolocationStatus() {
     loading,
     source, // 'browser', 'ip', ou undefined/null
     permissionStatus, // Objeto/Enum como PermissionStatus.GRANTED, DENIED, PROMPT
-    error    // Objeto de erro ou null
+    error,   // String de erro ou null
+    addressLine // Linha de endereço (rua mais próxima)
   } = useGeolocation();
 
   // Estado para verificar se há resultados de pesquisa ativos
   const [hasSearchResults, setHasSearchResults] = useState(false);
-
-  // Estado para controlar a exibição do tooltip no hover
-  const [showInfo, setShowInfo] = useState(false);
 
   // --- Efeito para observar resultados de pesquisa ---
   useEffect(() => {
@@ -53,29 +51,24 @@ export function GeolocationStatus() {
   // --- Determina a cor e o texto do indicador ---
   let statusColor = 'bg-gray-400'; // Cor padrão (cinza)
   let statusText = 'Localização desconhecida';
-  let tooltipText = 'Status de localização desconhecido';
 
   if (loading) {
     statusColor = 'bg-amber-400'; // Amarelo
     statusText = 'Localizando...';
-    tooltipText = 'Obtendo localização do navegador...';
   } else if (error) {
     statusColor = 'bg-red-400';   // Vermelho
     statusText = 'Erro de localização';
-    // Tenta usar a mensagem do erro, se disponível
-    tooltipText = `Erro: ${error?.message || 'Detalhes indisponíveis'}`;
   } else if (permissionStatus === PermissionStatus.DENIED) {
     statusColor = 'bg-red-400';   // Vermelho
     statusText = 'Permissão negada';
-    tooltipText = 'Permissão de localização negada pelo usuário';
   } else if (source === 'browser') {
     statusColor = 'bg-green-400'; // Verde
-    statusText = 'Localização precisa';
-    tooltipText = 'Localização obtida com precisão pelo navegador';
+    // Se tivermos o endereço da rua, mostramos ele
+    statusText = addressLine ? `Localização aproximada: ${addressLine}` : 'Localização precisa';
   } else if (source === 'ip') {
     statusColor = 'bg-blue-400';  // Azul
-    statusText = 'Localização aproximada';
-    tooltipText = 'Localização aproximada obtida via endereço IP';
+    // Se tivermos o endereço da rua, mostramos ele
+    statusText = addressLine ? `Localização aproximada: ${addressLine}` : 'Localização aproximada';
   }
   // Nota: Outros estados de permissão (GRANTED, PROMPT) são cobertos implicitamente
   //       pela lógica de 'source' e 'loading'.
@@ -90,8 +83,6 @@ export function GeolocationStatus() {
   return (
     <div
       className="flex justify-center items-center mt-1 mb-6"
-      onMouseEnter={() => setShowInfo(true)}
-      onMouseLeave={() => setShowInfo(false)}
       // Acessibilidade: Informa que a região contém status e que atualizações devem ser anunciadas
       role="status"
       aria-live="polite"
@@ -101,36 +92,18 @@ export function GeolocationStatus() {
         <div
           className={`
             ${statusColor}
-            w-2 h-2           {/* Tamanho do círculo */}
-            rounded-full      {/* Forma de círculo */}
-            transition-colors duration-300 {/* Transição suave de cor */}
-            ${loading ? 'animate-pulse' : ''} {/* Animação de pulso durante o carregamento */}
+            w-2 h-2           
+            rounded-full      
+            transition-colors duration-300 
+            ${loading ? 'animate-pulse' : ''} 
           `}
           aria-hidden="true" // Esconde o círculo decorativo de leitores de tela
         />
 
-        {/* Texto minimalista ao lado do indicador (fonte reduzida) */}
-        <span className="ml-1.5 text-[7px] text-gray-500 select-none"> {/* Fonte bem pequena */}
+        {/* Texto minimalista ao lado do indicador (fonte reduzida para 8px) */}
+        <span className="ml-1.5 text-[8px] text-gray-500 select-none"> 
           {statusText}
         </span>
-
-        {/* Tooltip com informações mais detalhadas (exibido no hover) */}
-        {showInfo && (
-          <div
-            className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1.5 /* Posicionamento abaixo e centralizado */
-                       bg-white/90 backdrop-blur-sm /* Fundo semi-transparente com blur */
-                       text-gray-800 text-[9px] /* Texto do tooltip (fonte pequena) */
-                       py-1 px-2
-                       rounded shadow-lg /* Sombra mais pronunciada */
-                       whitespace-nowrap /* Evita quebra de linha */
-                       z-10 /* Garante que fique sobre outros elementos */
-                       pointer-events-none /* Evita que o tooltip capture eventos do mouse */
-                      "
-            // Acessibilidade: Poderia ser ligado ao span via aria-describedby, mas complica o estado
-          >
-            {tooltipText}
-          </div>
-        )}
       </div>
     </div>
   );
