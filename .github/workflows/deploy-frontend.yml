@@ -2,37 +2,55 @@ name: Deploy Frontend to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    branches:
+      - main
+    paths:
+      - 'client/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-frontend.yml' # Este arquivo
+      - 'package.json'
+      - 'vite.config.ts'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4 # Atualizado para v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4 # Atualizado para v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'npm' 
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci # Usando 'ci' para consistência, certifique-se que package-lock.json está no repo
 
-      - name: Build frontend
+      - name: Build Frontend
+        env:
+          VITE_API_URL: https://web-production-76420.up.railway.app
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
-          npm run build
-          cp dist/public/index.html dist/public/404.html
-          touch dist/public/.nojekyll
+          echo "==> Iniciando build do Vite..."
+          # Removida a flag --force inválida. --debug ainda está presente.
+          npx vite build --base=/Saviana/ --debug
+          echo "==> Build do Vite concluído."
+          
+          echo "==> Verificando o conteúdo de dist/public após o build:"
+          echo "Listando conteúdo de dist/public:"
+          ls -R dist/public 
+          
+          echo "Conteúdo do index.html gerado em dist/public/index.html:"
+          if [ -f dist/public/index.html ]; then
+            grep -E 'rel="stylesheet" href="/Saviana/assets/|src="/Saviana/assets/' dist/public/index.html
+          else
+            echo "AVISO: dist/public/index.html não encontrado."
+          fi
+          echo "==> Verificação do index.html e assets concluída."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist/public
           branch: gh-pages
-          clean: true
+          folder: dist/public 
