@@ -146,41 +146,59 @@ export default function Home() {
       // Timeout para simular resultados parciais (apenas para demonstração da UI)
       // NOTA: Normalmente isso seria implementado no backend com streaming real
       let firstBatchReceived = false;
-      const firstBatchTimer = setTimeout(() => {
-        if (!firstBatchReceived) {
-          // Simula o primeiro conjunto de resultados chegando
-          console.log("[DEBUG] Simulando primeiro lote de resultados");
-          
-          // Gerar alguns resultados iniciais aleatórios para demonstrar a UI
-          const mockPartialResults: SearchResponse = {
-            needsClarification: false,
-            results: [
-              {
-                category: "local",  // O schema define isso como um enum
-                name: "Resultado preliminar local",
-                address: "Carregando endereço...",
-                distance: "Calculando...",
-                hasProduct: Math.random() > 0.5,
-                location: {
-                  lat: latitude || -23.55,
-                  lng: longitude || -46.63
-                }
-              }
-            ]
-          };
-          
-          // Atualizar estado com resultados parciais
-          setSearchState(prev => ({
-            loading: true, // ainda está carregando
-            results: mockPartialResults
-          }));
-        }
-      }, 700); // Mostrar resultados parciais após 700ms
+      // Variáveis de controle para o timer e limpeza
+      let timerCleanupFunction: (() => void) | null = null;
       
-      // Registrar uma função para limpar o timeout quando o componente for desmontado
+      // Função para simular resultados iniciais após 700ms
+      const startInitialResultsTimer = () => {
+        // Iniciar o timer para mostrar resultados preliminares
+        const timer = setTimeout(() => {
+          if (!firstBatchReceived) {
+            // Simula o primeiro conjunto de resultados chegando
+            console.log("[DEBUG] Simulando primeiro lote de resultados");
+            
+            // Gerar alguns resultados iniciais aleatórios para demonstrar a UI
+            const mockPartialResults: SearchResponse = {
+              needsClarification: false,
+              results: [
+                {
+                  category: "local",  // O schema define isso como um enum
+                  name: "Resultado preliminar local",
+                  address: "Carregando endereço...",
+                  distance: "Calculando...",
+                  hasProduct: Math.random() > 0.5,
+                  location: {
+                    lat: latitude || -23.55,
+                    lng: longitude || -46.63
+                  }
+                }
+              ]
+            };
+            
+            // Atualizar estado com resultados parciais
+            setSearchState(prev => ({
+              loading: true, // ainda está carregando
+              results: mockPartialResults
+            }));
+          }
+        }, 700); // Mostrar resultados parciais após 700ms
+        
+        // Retornar função de limpeza
+        return () => {
+          clearTimeout(timer);
+        };
+      };
+      
+      // Iniciar o timer e guardar a função de limpeza
+      timerCleanupFunction = startInitialResultsTimer();
+      
+      // Função para limpar recursos quando a busca termina
       const cleanup = () => {
-        clearTimeout(firstBatchTimer);
+        if (timerCleanupFunction) {
+          timerCleanupFunction();
+        }
         controller.abort();
+        firstBatchReceived = true;
       };
 
       const response = await fetch("/api/search", {
@@ -196,7 +214,11 @@ export default function Home() {
 
       // Marca que recebemos a resposta real
       firstBatchReceived = true;
-      clearTimeout(firstBatchTimer);
+      
+      // Garantimos que o timer seja limpo quando recebemos a resposta real
+      if (timerCleanupFunction) {
+        timerCleanupFunction();
+      }
 
       if (!response.ok) {
         throw new Error("Search failed");
@@ -238,10 +260,8 @@ export default function Home() {
         ]);
       }
 
-      // Lidar com o cleanup após o recebimento de resultados
-      if (typeof cleanup === 'function') {
-        cleanup();
-      }
+      // Limpar os recursos (timer e controller) após receber a resposta
+      cleanup();
       
       if (data.needsClarification && data.clarificationQuestion) {
         console.log("[DEBUG] Necessita clarificação, parando carregamento");
