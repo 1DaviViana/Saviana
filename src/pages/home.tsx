@@ -332,10 +332,21 @@ export default function Home() {
         />
       )}
 
-      <ResultsContainer 
-        loading={searchState.loading} 
-        results={searchState.results} 
-      />
+      {/* Somente mostrar o spinner de ResultsContainer quando não houver conversa ativa ou a conversa não estiver respondida */}
+      {(!conversation.visible || !conversation.hasResponded) && (
+        <ResultsContainer 
+          loading={searchState.loading} 
+          results={searchState.results} 
+        />
+      )}
+      
+      {/* Mostrar resultados sem spinner quando conversa estiver respondida */}
+      {conversation.visible && conversation.hasResponded && (
+        <ResultsContainer 
+          loading={false} 
+          results={searchState.results} 
+        />
+      )}
       
       {/* Debug logs (temporariamente ocultos) */}
       {false && <DebugLogs logs={debugLogs} />}

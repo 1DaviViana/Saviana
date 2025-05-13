@@ -84,8 +84,8 @@ export function GeolocationStatus() {
           `}
         />
         
-        {/* Texto minimalista ao lado do indicador */}
-        <span className="ml-1.5 text-[10px] text-gray-500">
+        {/* Texto minimalista ao lado do indicador (com fonte menor) */}
+        <span className="ml-1.5 text-[8px] text-gray-500">
           {loading ? 'Localizando...' : 
            source === 'browser' ? 'Localização precisa' :
            source === 'ip' ? 'Localização aproximada' :
