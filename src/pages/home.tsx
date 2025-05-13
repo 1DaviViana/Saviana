@@ -7,6 +7,8 @@ import { useGeolocation } from "../hooks/use-geolocation";
 import { SearchResponse } from "../../shared/schema";
 // Importação direta do UserCreditsDisplay
 import UserCreditsDisplay from "../components/UserCreditsDisplay";
+// Importação do componente de status de geolocalização
+import { GeolocationStatus } from "../components/GeolocationStatus";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -334,6 +336,9 @@ export default function Home() {
       
       {/* Debug logs (temporariamente ocultos) */}
       {false && <DebugLogs logs={debugLogs} />}
+      
+      {/* Indicador de status da geolocalização */}
+      <GeolocationStatus />
     </div>
   );
 }

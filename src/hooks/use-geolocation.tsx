@@ -32,7 +32,7 @@ export enum PermissionStatus {
 export enum LocationSource {
   BROWSER = 'browser',
   IP = 'ip',
-  NONE = null
+  NONE = 'none'
 }
 
 // Configurações do debounce e timeout
