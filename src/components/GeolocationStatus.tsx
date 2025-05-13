@@ -6,18 +6,22 @@ import { Input } from './ui/input';
 import { MapPin } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
+// Definindo a interface das props
+interface GeolocationStatusProps {
+  setCustomLocation: (lat: number, lng: number, addressOrCep?: string) => void;
+}
+
 /**
  * Componente minimalista que exibe o status atual da geolocalização
  * abaixo da barra de pesquisa, ocultando-se quando há resultados de pesquisa.
  */
-export function GeolocationStatus() {
+export function GeolocationStatus({ setCustomLocation }: GeolocationStatusProps) {
   const {
     loading,
     source, // 'browser', 'ip', ou undefined/null
     permissionStatus, // Objeto/Enum como PermissionStatus.GRANTED, DENIED, PROMPT
     error,   // String de erro ou null
     addressLine, // Linha de endereço (rua mais próxima)
-    setCustomLocation // Função para definir uma localização personalizada
   } = useGeolocation();
 
   // Estado para verificar se há resultados de pesquisa ativos
