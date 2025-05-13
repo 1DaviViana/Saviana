@@ -36,9 +36,9 @@ export enum LocationSource {
 }
 
 // Configurações do debounce e timeout
-const DEBOUNCE_INTERVAL = 10000; // 10 segundos entre tentativas
-const LOCATION_TIMEOUT = 30000; // 30 segundos para timeout da geolocalização
-const MAX_ATTEMPTS_BROWSER = 3; // Número máximo de tentativas para o navegador
+const DEBOUNCE_INTERVAL = 5000; // 5 segundos entre tentativas (reduzido para melhor experiência do usuário)
+const LOCATION_TIMEOUT = 15000; // 15 segundos para timeout da geolocalização (reduzido para evitar esperas longas)
+const MAX_ATTEMPTS_BROWSER = 2; // Número máximo de tentativas para o navegador antes de usar fallback
 
 /**
  * Hook personalizado para gerenciar geolocalização com verificação inteligente de permissões
@@ -188,69 +188,157 @@ export function useGeolocation() {
       try {
         console.debug('[DEBUG] Iniciando solicitação de geolocalização do navegador...');
         
-        // Solicita a localização do navegador com abordagem melhorada
+        // Solicita a localização do navegador com abordagem melhorada e aprimorada
         const geolocationPromise = new Promise<GeolocationPosition>((resolve, reject) => {
           let watchId: number | null = null;
+          let isResolved = false; // Flag para controlar se a Promise já foi resolvida
           
+          // Timer para timeout global
           const timeoutId = setTimeout(() => {
-            console.debug('[DEBUG] Timeout da geolocalização atingido');
-            if (watchId !== null) {
-              navigator.geolocation.clearWatch(watchId);
+            if (!isResolved) {
+              console.debug('[DEBUG] Timeout global da geolocalização atingido');
+              isResolved = true;
+              
+              // Limpa todos os listeners e watches pendentes
+              if (watchId !== null) {
+                try {
+                  navigator.geolocation.clearWatch(watchId);
+                  watchId = null;
+                } catch (e) {
+                  console.debug('[DEBUG] Erro ao limpar watch:', e);
+                }
+              }
+              
+              reject(new Error('Timeout da geolocalização'));
             }
-            reject(new Error('Timeout da geolocalização'));
           }, LOCATION_TIMEOUT);
           
-          // Success handler
+          // Success handler - comum para ambos os métodos
           const onSuccess = (position: GeolocationPosition) => {
-            console.debug('[DEBUG] Geolocalização obtida com sucesso:', {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              accuracy: position.coords.accuracy
-            });
-            clearTimeout(timeoutId);
-            if (watchId !== null) {
-              navigator.geolocation.clearWatch(watchId);
-            }
-            resolve(position);
-          };
-          
-          // Error handler
-          const onError = (error: GeolocationPositionError) => {
-            console.debug('[DEBUG] Erro na API de geolocalização:', {
-              codigo: error.code,
-              mensagem: error.message
-            });
-            clearTimeout(timeoutId);
-            if (watchId !== null) {
-              navigator.geolocation.clearWatch(watchId);
-            }
-            reject(error);
-          };
-          
-          // Tenta primeiro getCurrentPosition
-          console.debug('[DEBUG] Chamando getCurrentPosition...');
-          navigator.geolocation.getCurrentPosition(
-            onSuccess,
-            (error) => {
-              console.debug('[DEBUG] getCurrentPosition falhou, tentando watchPosition:', error);
+            if (!isResolved) {
+              console.debug('[DEBUG] Geolocalização obtida com sucesso:', {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy
+              });
               
-              // Se getCurrentPosition falhar, tenta watchPosition como backup
-              watchId = navigator.geolocation.watchPosition(
-                onSuccess,
-                onError,
-                { 
-                  maximumAge: 30000, // 30 segundos
-                  timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
-                  enableHighAccuracy: false // Precisão moderada para equilíbrio entre exatidão e velocidade
+              isResolved = true;
+              
+              // Limpa o timeout e watch
+              clearTimeout(timeoutId);
+              if (watchId !== null) {
+                try {
+                  navigator.geolocation.clearWatch(watchId);
+                  watchId = null;
+                } catch (e) {
+                  console.debug('[DEBUG] Erro ao limpar watch após sucesso:', e);
                 }
-              );
-            },
-            { 
-              maximumAge: 60000, // 1 minuto
-              timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
-              enableHighAccuracy: false // Precisão moderada para equilíbrio entre exatidão e velocidade
+              }
+              
+              resolve(position);
             }
-          );
+          };
+          
+          // Error handler - comum para ambos os métodos
+          const onError = (error: GeolocationPositionError) => {
+            if (!isResolved) {
+              console.debug('[DEBUG] Erro na API de geolocalização:', {
+                codigo: error.code,
+                mensagem: error.message
+              });
+              
+              // Para erros de permissão, resolvemos imediatamente
+              if (error.code === 1) { // PERMISSION_DENIED
+                isResolved = true;
+                clearTimeout(timeoutId);
+                
+                if (watchId !== null) {
+                  try {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                  } catch (e) {
+                    console.debug('[DEBUG] Erro ao limpar watch após erro de permissão:', e);
+                  }
+                }
+                
+                reject(error);
+                return;
+              }
+              
+              // Para outros erros, se ainda não estamos usando watchPosition, tentamos esse método como backup
+              if (watchId === null) {
+                console.debug('[DEBUG] Erro não fatal, tentando watchPosition como backup');
+                
+                // Não marcamos como isResolved para permitir que o watchPosition tente
+                return;
+              }
+              
+              // Se já estamos usando watchPosition e mesmo assim temos erro, desistimos
+              isResolved = true;
+              clearTimeout(timeoutId);
+              
+              if (watchId !== null) {
+                try {
+                  navigator.geolocation.clearWatch(watchId);
+                  watchId = null;
+                } catch (e) {
+                  console.debug('[DEBUG] Erro ao limpar watch após falha:', e);
+                }
+              }
+              
+              reject(error);
+            }
+          };
+          
+          try {
+            // Tenta primeiro getCurrentPosition com timeout menor que o global
+            console.debug('[DEBUG] Chamando getCurrentPosition...');
+            navigator.geolocation.getCurrentPosition(
+              onSuccess,
+              (error) => {
+                // Se não for erro de permissão e a Promise ainda não foi resolvida, tenta watchPosition
+                if (error.code !== 1 && !isResolved) {
+                  console.debug('[DEBUG] getCurrentPosition falhou, tentando watchPosition como backup:', error);
+                  
+                  try {
+                    // Se getCurrentPosition falhar mas não for por permissão, tenta watchPosition como backup
+                    watchId = navigator.geolocation.watchPosition(
+                      onSuccess,
+                      onError,
+                      { 
+                        maximumAge: 10000, // 10 segundos
+                        timeout: LOCATION_TIMEOUT - 5000, // 5 segundos a menos que o timeout geral
+                        enableHighAccuracy: false // Mantém precisão moderada para melhor performance
+                      }
+                    );
+                  } catch (e) {
+                    console.debug('[DEBUG] Erro ao configurar watchPosition:', e);
+                    if (!isResolved) {
+                      isResolved = true;
+                      clearTimeout(timeoutId);
+                      reject(new Error('Falha ao configurar geolocalização'));
+                    }
+                  }
+                } else {
+                  // Se for erro de permissão, delegamos para o handler de erro
+                  onError(error);
+                }
+              },
+              { 
+                maximumAge: 30000, // 30 segundos
+                timeout: LOCATION_TIMEOUT - 5000, // 5 segundos a menos que o timeout geral
+                enableHighAccuracy: false // Precisão moderada para equilíbrio entre exatidão e velocidade
+              }
+            );
+          } catch (e) {
+            // Em caso de exceção ao tentar configurar a geolocalização (raro, mas pode acontecer)
+            console.debug('[DEBUG] Exceção ao configurar geolocalização:', e);
+            if (!isResolved) {
+              isResolved = true;
+              clearTimeout(timeoutId);
+              reject(new Error('Exceção ao iniciar geolocalização'));
+            }
+          }
         });
         
         console.debug('[DEBUG] Aguardando resultado da geolocalização...');
@@ -323,10 +411,14 @@ export function useGeolocation() {
    * Função auxiliar para utilizar a localização de fallback (baseada em IP)
    * @param now Timestamp atual
    */
-  const useFallbackLocation = async (now: number) => {
+  const useFallbackLocation = useCallback(async (now: number) => {
     try {
+      console.debug('[DEBUG] Iniciando processo de fallback para obter localização por IP');
       const fallback = await getLocationByIP();
+      
       if (fallback) {
+        console.debug('[DEBUG] Fallback de localização por IP bem-sucedido:', fallback);
+        
         setState(prev => ({
           ...prev,
           latitude: fallback.latitude,
@@ -344,8 +436,11 @@ export function useGeolocation() {
           attempts: prev.attempts + 1,
           cooldown: false,
         }));
-        console.debug('[DEBUG] Usando localização por IP com sucesso');
+        
+        console.debug('[DEBUG] Estado atualizado com localização por IP');
       } else {
+        console.debug('[DEBUG] Fallback de localização retornou nulo');
+        
         setState(prev => ({
           ...prev,
           error: 'Erro ao obter localização por IP',
@@ -354,6 +449,8 @@ export function useGeolocation() {
         }));
       }
     } catch (err) {
+      console.debug('[DEBUG] Erro ao executar fallback de localização:', err);
+      
       setState(prev => ({
         ...prev,
         error: 'Erro no sistema de fallback',
@@ -361,25 +458,97 @@ export function useGeolocation() {
         cooldown: false
       }));
     }
-  };
+  }, []);
 
   // Efeito para inicializar a geolocalização ao montar o componente
   useEffect(() => {
+    let isMounted = true; // Flag para evitar atualização de estado após desmontagem
+    
     const initGeolocation = async () => {
-      // Verifica o status da permissão antes de tentar acessar a geolocalização
-      const permissionStatus = await checkPermissionStatus();
-      setState(prev => ({ ...prev, permissionStatus }));
+      if (!isMounted) return;
       
-      // Solicita geolocalização
-      requestGeolocation();
+      try {
+        // Verifica o status da permissão antes de tentar acessar a geolocalização
+        const permissionStatus = await checkPermissionStatus();
+        
+        if (!isMounted) return;
+        
+        // Atualiza o estado com o status da permissão atual
+        setState(prev => ({ ...prev, permissionStatus }));
+        
+        // Solicita geolocalização apenas se o componente ainda estiver montado
+        requestGeolocation();
+      } catch (error) {
+        console.debug('[DEBUG] Erro ao inicializar geolocalização:', error);
+        
+        if (!isMounted) return;
+        
+        // Em caso de erro, vai para o fallback
+        setState(prev => ({
+          ...prev,
+          error: 'Erro ao inicializar geolocalização',
+          loading: false
+        }));
+      }
     };
     
+    // Inicia o processo de geolocalização
     initGeolocation();
     
+    // Adiciona um listener para mudanças no status de permissão (útil em ambiente de produção)
+    let permissionListener: (() => void) | undefined;
+    
+    if (typeof navigator !== 'undefined' && 'permissions' in navigator) {
+      try {
+        navigator.permissions.query({ name: 'geolocation' as PermissionName })
+          .then(permissionStatus => {
+            if (!isMounted) return;
+            
+            // Define um callback para mudanças no status de permissão
+            const onPermissionChange = () => {
+              console.debug('[DEBUG] Status de permissão mudou:', permissionStatus.state);
+              if (isMounted) {
+                setState(prev => ({ ...prev, permissionStatus: permissionStatus.state as PermissionStatus }));
+                
+                // Se a permissão foi concedida, tenta obter a localização
+                if (permissionStatus.state === 'granted') {
+                  requestGeolocation();
+                } 
+                // Se a permissão foi negada, vai para o fallback
+                else if (permissionStatus.state === 'denied') {
+                  useFallbackLocation(Date.now());
+                }
+              }
+            };
+            
+            // Adiciona o listener
+            permissionStatus.addEventListener('change', onPermissionChange);
+            
+            // Armazena a referência para limpar depois
+            permissionListener = () => permissionStatus.removeEventListener('change', onPermissionChange);
+          })
+          .catch(error => {
+            console.debug('[DEBUG] Erro ao configurar listener de permissão:', error);
+          });
+      } catch (error) {
+        console.debug('[DEBUG] Erro ao tentar acessar API de permissões:', error);
+      }
+    }
+    
+    // Cleanup function
     return () => {
-      // Limpeza caso seja necessário
+      isMounted = false;
+      
+      // Remove o listener de permissão se existir
+      if (permissionListener) {
+        try {
+          permissionListener();
+        } catch (e) {
+          console.debug('[DEBUG] Erro ao remover listener de permissão:', e);
+        }
+      }
     };
-  }, [checkPermissionStatus, requestGeolocation]);
+  }, [checkPermissionStatus, requestGeolocation, useFallbackLocation]);
 
   return {
     ...state,
