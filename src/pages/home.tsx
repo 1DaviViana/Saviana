@@ -318,6 +318,9 @@ export default function Home() {
       </header>
 
       <SearchBar onSearch={handleSearch} />
+      
+      {/* Indicador de status da geolocalização - posicionado após a barra de pesquisa */}
+      <GeolocationStatus />
 
       {conversation.visible && (
         <ConversationContainer
@@ -336,9 +339,6 @@ export default function Home() {
       
       {/* Debug logs (temporariamente ocultos) */}
       {false && <DebugLogs logs={debugLogs} />}
-      
-      {/* Indicador de status da geolocalização */}
-      <GeolocationStatus />
     </div>
   );
 }
