@@ -1,0 +1,48 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-frontend.yml' # Monitora a si mesmo para mudanças
+      - 'package.json'
+      - 'vite.config.ts'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Frontend
+        env:
+          # Chave para o backend (Railway)
+          VITE_API_URL: https://web-production-76420.up.railway.app
+          # Chave para o Google Maps JavaScript API (frontend) - lida do segredo do GitHub
+          # -----> LINHA ADICIONADA ABAIXO <-----
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
+        run: |
+          # Executa o comando vite build DIRETAMENTE, passando a base correta
+          # Usamos npx para garantir que o vite instalado localmente seja encontrado
+          npx vite build --base=/Saviana/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          # A pasta que o Vite constrói (definida em vite.config.ts como dist/public)
+          folder: dist/public
+          # O branch para onde será feito o deploy
+          branch: gh-pages
