@@ -233,10 +233,10 @@ export default function Home() {
             data: data._debug || { message: 'Resultados recebidos' }
           },
           // Adicionar metadados detalhados quando disponíveis
-          ...(data.results?.length > 0 && data.results[0].metadata?._debugAll ? [{
+          ...(data.results && data.results.length > 0 && data.results[0]?.metadata?._debugAll ? [{
             timestamp: now,
             source: 'Detalhes',
-            data: data.results[0].metadata._debugAll
+            data: data.results[0]?.metadata?._debugAll || { message: 'Detalhes não disponíveis' }
           }] : []),
           ...prevLogs
         ]);
@@ -360,7 +360,7 @@ export default function Home() {
         ...(data.results && data.results.length > 0 && data.results[0]?.metadata?._debugAll ? [{
           timestamp: now,
           source: 'Resultados Detalhados',
-          data: data.results[0].metadata._debugAll
+          data: data.results[0]?.metadata?._debugAll || { message: 'Detalhes não disponíveis' }
         }] : []),
         ...prevLogs
       ]);
