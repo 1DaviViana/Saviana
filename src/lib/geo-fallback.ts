@@ -10,7 +10,7 @@ const DEFAULT_COORDINATES = {
   longitude: -49.28206,
   city: 'Curitiba',
   country: 'Brasil',
-  addressLine: 'Rua XV de Novembro' // Rua conhecida em Curitiba
+  addressLine: undefined
 };
 
 // Cliente do Google Maps

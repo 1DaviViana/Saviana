@@ -63,12 +63,12 @@ export function GeolocationStatus() {
     statusText = 'Permissão negada';
   } else if (source === 'browser') {
     statusColor = 'bg-green-400'; // Verde
-    // Se tivermos o endereço da rua, mostramos ele
-    statusText = addressLine ? `Localização aproximada: ${addressLine}` : 'Localização precisa';
+    // Independente de ter rua ou não, mostrar Localização precisa
+    statusText = 'Localização precisa';
   } else if (source === 'ip') {
     statusColor = 'bg-blue-400';  // Azul
-    // Se tivermos o endereço da rua, mostramos ele
-    statusText = addressLine ? `Localização aproximada: ${addressLine}` : 'Localização aproximada';
+    // Mantém apenas "Localização aproximada" sem adicionar o endereço
+    statusText = 'Localização aproximada';
   }
   // Nota: Outros estados de permissão (GRANTED, PROMPT) são cobertos implicitamente
   //       pela lógica de 'source' e 'loading'.
