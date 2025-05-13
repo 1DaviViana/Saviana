@@ -156,13 +156,15 @@ export default function Home() {
             needsClarification: false,
             results: [
               {
-                category: "local" as "local", // Garantindo que é do tipo literal correto
+                category: "local",  // O schema define isso como um enum
                 name: "Resultado preliminar local",
                 address: "Carregando endereço...",
                 distance: "Calculando...",
                 hasProduct: Math.random() > 0.5,
-                latitude: latitude || -23.55,
-                longitude: longitude || -46.63
+                location: {
+                  lat: latitude || -23.55,
+                  lng: longitude || -46.63
+                }
               }
             ]
           };
@@ -236,9 +238,9 @@ export default function Home() {
         ]);
       }
 
-      // Garantir que limpamos o timer se existir
-      if (firstBatchReceived) {
-        clearTimeout(firstBatchTimer);
+      // Lidar com o cleanup após o recebimento de resultados
+      if (typeof cleanup === 'function') {
+        cleanup();
       }
       
       if (data.needsClarification && data.clarificationQuestion) {
