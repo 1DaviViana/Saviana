@@ -31,9 +31,9 @@
     <!-- Configuração específica para iframe em Railway/GitHub -->
     <meta name="referrer" content="no-referrer-when-downgrade" />
     
-    <!-- Carregando Google Maps API diretamente no head -->
-    <!-- Usando variável de ambiente para a API key (será substituída no build) -->
-    <script async defer id="google-maps-script" src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_PLACES_API_KEY%&libraries=places"></script>
+    <!-- Carregando Google Maps API será feito dinamicamente no código -->
+    <!-- Não incluímos a tag script diretamente para proteção da API key -->
+    <!-- O script será adicionado pelo env-setup.ts -->
     
     <!-- O Vite irá injetar o <link rel="stylesheet"> aqui durante o build -->
   </head>
