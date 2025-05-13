@@ -38,21 +38,22 @@ export default function GoogleMap({ locations }: GoogleMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
 
+  // Usando a API do Google Maps que já está carregada no head do HTML
   useEffect(() => {
-    const loadGoogleMapsScript = () => {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY || ''}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setLoaded(true);
-      script.onerror = () => setError(true);
-      document.head.appendChild(script);
-    };
-
-    if (!window.google) {
-      loadGoogleMapsScript();
-    } else {
+    // Verificar se o Google Maps já está carregado ou esperar pelo evento de carregamento
+    if (window.google && window.google.maps) {
       setLoaded(true);
+    } else {
+      // Se ainda não estiver carregado, configurar um ouvinte para quando a API estiver pronta
+      const checkGoogleMaps = setInterval(() => {
+        if (window.google && window.google.maps) {
+          setLoaded(true);
+          clearInterval(checkGoogleMaps);
+        }
+      }, 100);
+      
+      // Limpar o intervalo se o componente for desmontado
+      return () => clearInterval(checkGoogleMaps);
     }
   }, []);
 
