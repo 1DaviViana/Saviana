@@ -40,6 +40,7 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
+          <p className="text-sm mt-2 text-muted-foreground">Buscando resultados...</p>
         </div>
       </div>
     );
@@ -61,12 +62,12 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
         {/* Indicador de carregamento no topo quando temos resultados parciais */}
         {loading && hasAnyResults && (
           <div className="text-center py-2 mb-3">
-            <div className="inline-flex items-center">
+            <div className="inline-flex items-center bg-blue-50 px-3 py-1 rounded-full shadow-sm">
               <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="text-xs text-gray-600">Carregando mais resultados...</span>
+              <span className="text-xs text-blue-700 font-medium">Carregando mais resultados...</span>
             </div>
           </div>
         )}
@@ -77,7 +78,12 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
               <div className="mb-4">
                 <p className="text-sm text-gray-500 mb-2">
                   {localResults.length} estabelecimentos próximos
-                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                  {loading && (
+                    <span className="text-xs text-blue-600 ml-1 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      <span className="inline-block h-1.5 w-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                      buscando mais...
+                    </span>
+                  )}
                 </p>
                 
                 {/* Map section */}
@@ -115,7 +121,12 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
               <div className="mb-4">
                 <p className="text-sm text-gray-500 mb-2">
                   Opções online nacionais
-                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                  {loading && (
+                    <span className="text-xs text-blue-600 ml-1 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      <span className="inline-block h-1.5 w-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                      buscando mais...
+                    </span>
+                  )}
                 </p>
                 
                 {/* National results list */}
@@ -150,7 +161,12 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
               <div>
                 <p className="text-sm text-gray-500 mb-2">
                   Opções internacionais
-                  {loading && <span className="text-xs text-gray-400 ml-1">(buscando mais...)</span>}
+                  {loading && (
+                    <span className="text-xs text-blue-600 ml-1 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      <span className="inline-block h-1.5 w-1.5 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
+                      buscando mais...
+                    </span>
+                  )}
                 </p>
                 
                 {/* Global results list */}
