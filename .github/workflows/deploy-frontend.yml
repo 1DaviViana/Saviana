@@ -16,35 +16,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3 # Considere atualizar para @v4 se não houver problemas de compatibilidade
+        uses: actions/checkout@v4 # Atualizado para v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3 # Considere atualizar para @v4
+        uses: actions/setup-node@v4 # Atualizado para v4
         with:
           node-version: '20'
-          cache: 'npm' # O cache do npm geralmente não afeta o cache interno do Vite, mas é bom ter
+          cache: 'npm' 
 
       - name: Install dependencies
-        run: npm install # Ou 'npm ci' para builds mais determinísticos se você commita package-lock.json
+        run: npm ci # Usando 'ci' para consistência, certifique-se que package-lock.json está no repo
 
       - name: Build Frontend
         env:
           VITE_API_URL: https://web-production-76420.up.railway.app
           VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
-          echo "==> Iniciando build do Vite com --force..."
-          # Adicionada a flag --force para garantir que o Vite não use seu cache de build interno
-          # A flag --debug já estava presente e é útil para ver mais logs do Vite
-          npx vite build --force --base=/Saviana/ --debug
+          echo "==> Iniciando build do Vite..."
+          # Removida a flag --force inválida. --debug ainda está presente.
+          npx vite build --base=/Saviana/ --debug
           echo "==> Build do Vite concluído."
           
           echo "==> Verificando o conteúdo de dist/public após o build:"
           echo "Listando conteúdo de dist/public:"
-          ls -R dist/public # Lista recursivamente para ver a estrutura de pastas
+          ls -R dist/public 
           
           echo "Conteúdo do index.html gerado em dist/public/index.html:"
-          # Tenta imprimir as linhas relevantes do index.html gerado
-          # Modificado o grep para ser mais específico para o seu caso
           if [ -f dist/public/index.html ]; then
             grep -E 'rel="stylesheet" href="/Saviana/assets/|src="/Saviana/assets/' dist/public/index.html
           else
@@ -55,16 +52,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # O branch para o qual você quer fazer deploy (ex: gh-pages, master se for user/org page)
           branch: gh-pages
-          # O diretório que você quer fazer deploy a partir do seu runner
           folder: dist/public 
-          # Opcional: Limpa arquivos antigos do branch de deploy antes de adicionar novos arquivos
-          # Isso pode ajudar a evitar arquivos órfãos de builds anteriores.
-          # Use com cuidado, pois remove todo o histórico do branch gh-pages se não for um deploy completo.
-          # Se JamesIves/github-pages-deploy-action@v4 já faz um force push por padrão (o que é comum),
-          # esta opção pode ser redundante ou ter um comportamento ligeiramente diferente.
-          # clean: true 
-
-          # A action JamesIves/github-pages-deploy-action geralmente faz um force push por padrão
-          # o que garante que o branch de destino reflita exatamente o conteúdo da pasta 'folder'.
