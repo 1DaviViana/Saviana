@@ -17,14 +17,35 @@ interface GeolocationState {
   lastAttempt?: number;
   attempts: number;
   cooldown: boolean;
+  permissionStatus: 'granted' | 'denied' | 'prompt' | 'unknown';
+}
+
+// Enum para status das permissões
+export enum PermissionStatus {
+  GRANTED = 'granted',
+  DENIED = 'denied',
+  PROMPT = 'prompt',
+  UNKNOWN = 'unknown'
+}
+
+// Enum para fontes de localização
+export enum LocationSource {
+  BROWSER = 'browser',
+  IP = 'ip',
+  NONE = null
 }
 
 // Configurações do debounce e timeout
 const DEBOUNCE_INTERVAL = 10000; // 10 segundos entre tentativas
-const LOCATION_TIMEOUT = 30000; // 30 segundos para timeout da geolocalização (aumentado ainda mais)
+const LOCATION_TIMEOUT = 30000; // 30 segundos para timeout da geolocalização
 const MAX_ATTEMPTS_BROWSER = 3; // Número máximo de tentativas para o navegador
 
-// Função exportada para geolocalização
+/**
+ * Hook personalizado para gerenciar geolocalização com verificação inteligente de permissões
+ * e fallback para localização por IP quando necessário.
+ * 
+ * @returns Estado da geolocalização e função para solicitá-la novamente
+ */
 export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
     latitude: null,
@@ -42,8 +63,31 @@ export function useGeolocation() {
     lastAttempt: Date.now(),
     attempts: 0,
     cooldown: false,
+    permissionStatus: 'unknown',
   });
 
+  /**
+   * Verifica o status atual da permissão de geolocalização
+   * @returns Promise com o status da permissão
+   */
+  const checkPermissionStatus = useCallback(async (): Promise<PermissionStatus> => {
+    if (typeof navigator === 'undefined' || !('permissions' in navigator)) {
+      return PermissionStatus.UNKNOWN;
+    }
+
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+      return permission.state as PermissionStatus;
+    } catch (err) {
+      console.debug('[DEBUG] Erro ao verificar permissão:', err);
+      return PermissionStatus.UNKNOWN;
+    }
+  }, []);
+
+  /**
+   * Solicita a geolocalização do usuário, verificando primeiro as permissões
+   * e utilizando fallback quando necessário
+   */
   const requestGeolocation = useCallback(async () => {
     // Verifica se já tem coordenadas ou se está em loading
     if ((state.latitude && state.longitude && !state.loading) || state.cooldown) {
@@ -74,9 +118,31 @@ export function useGeolocation() {
       attempts: prev.attempts + 1,
     }));
 
-    // Tenta usar a geolocalização do navegador primeiro
-    if (typeof navigator !== 'undefined' && 'geolocation' in navigator && state.attempts < MAX_ATTEMPTS_BROWSER) {
-      // Diagnóstico do ambiente
+    // Verifica permissões antes de tentar acessar a geolocalização
+    const permissionStatus = await checkPermissionStatus();
+    console.debug('[DEBUG] Status da permissão de geolocalização:', permissionStatus);
+    
+    // Atualiza o estado com o status da permissão
+    setState(prev => ({ 
+      ...prev, 
+      permissionStatus 
+    }));
+
+    // Se a permissão foi negada, vai direto para o fallback
+    if (permissionStatus === PermissionStatus.DENIED) {
+      console.debug('[DEBUG] Permissão de geolocalização negada. Usando fallback imediatamente.');
+      await useFallbackLocation(now);
+      return;
+    }
+
+    // Tenta usar a geolocalização do navegador primeiro se a permissão for concedida ou se for prompt
+    if (typeof navigator !== 'undefined' && 
+        'geolocation' in navigator && 
+        state.attempts < MAX_ATTEMPTS_BROWSER && 
+        (permissionStatus === PermissionStatus.GRANTED || permissionStatus === PermissionStatus.PROMPT)
+       ) {
+      
+      // Diagnóstico do ambiente para debug
       const ehIframe = typeof window !== 'undefined' && window.self !== window.top;
       const permissionsPolicy = typeof document !== 'undefined' ? 
         document.querySelector('meta[http-equiv="Permissions-Policy"]')?.getAttribute('content') : null;
@@ -85,55 +151,7 @@ export function useGeolocation() {
       const hostname = typeof window !== 'undefined' ? window.location?.hostname : 'N/A';
       const isProduction = hostname === 'www.saviana.com.br' || hostname === 'saviana.com.br';
       
-      // Verificações detalhadas em produção
-      let permissaoGeolocation = 'não verificado';
-      try {
-        if (typeof navigator !== 'undefined' && 'permissions' in navigator) {
-          navigator.permissions.query({ name: 'geolocation' as PermissionName })
-            .then((result) => {
-              console.debug('[DEBUG] Status da permissão de geolocalização:', result.state);
-              permissaoGeolocation = result.state;
-              
-              // Instruções específicas para o ambiente de produção
-              if (isProduction) {
-                if (result.state === 'denied') {
-                  console.debug('[DEBUG] [PRODUÇÃO] Permissão de geolocalização negada para este site. O usuário deverá ativar permissões no navegador.');
-                  alert('Para uma melhor experiência, por favor habilite o compartilhamento de localização no seu navegador e recarregue a página.');
-                } else if (result.state === 'prompt') {
-                  console.debug('[DEBUG] [PRODUÇÃO] O usuário será solicitado a permitir geolocalização.');
-                }
-              }
-            })
-            .catch(err => {
-              console.debug('[DEBUG] Erro ao verificar permissão:', err);
-            });
-        }
-      } catch (err) {
-        console.debug('[DEBUG] Erro ao acessar API de permissões:', err);
-      }
-      
-      // Verificações adicionais para detecção de problemas no domínio de produção
-      if (isProduction) {
-        console.debug('[DEBUG] [PRODUÇÃO] Analisando configurações do site saviana.com.br');
-        
-        // Verificar se há algum header no servidor que possa estar causando problemas
-        try {
-          fetch(window.location.href, { method: 'HEAD' })
-            .then(response => {
-              console.debug('[DEBUG] [PRODUÇÃO] Headers recebidos:', {
-                contentSecurityPolicy: response.headers.get('Content-Security-Policy'),
-                featurePolicy: response.headers.get('Feature-Policy'),
-                permissionsPolicy: response.headers.get('Permissions-Policy')
-              });
-            })
-            .catch(err => {
-              console.debug('[DEBUG] [PRODUÇÃO] Erro ao verificar headers:', err);
-            });
-        } catch (err) {
-          console.debug('[DEBUG] [PRODUÇÃO] Erro ao fazer solicitação HEAD:', err);
-        }
-      }
-      
+      // Log detalhado de diagnóstico
       console.debug('[DEBUG] Verificando suporte a geolocalização:', {
         navegadorSuportado: typeof navigator !== 'undefined',
         apiDisponivel: typeof navigator !== 'undefined' && 'geolocation' in navigator,
@@ -143,7 +161,7 @@ export function useGeolocation() {
         ehIframe: ehIframe,
         permissionsPolicy: permissionsPolicy || 'não definido',
         featurePolicy: featurePolicy || 'não definido',
-        statusPermissao: permissaoGeolocation,
+        statusPermissao: permissionStatus,
         url: typeof window !== 'undefined' ? window.location?.href : 'N/A',
         hostname: hostname,
         tentativa: state.attempts + 1,
@@ -153,17 +171,12 @@ export function useGeolocation() {
       // Verificar se estamos em um iframe e se isso pode estar bloqueando
       if (ehIframe) {
         console.debug('[DEBUG] Executando em um iframe, o que pode restringir a geolocalização');
-        
-        // Tenta uma abordagem específica para iframes
         try {
           console.debug('[DEBUG] Tentando abordar específica para iframe...');
-          // Tenta forçar a permissão usando uma abordagem alternativa
           if (typeof document !== 'undefined') {
-            // Verifica se o documento pai permite a incorporação
             const parentDocumentDomain = document.referrer ? new URL(document.referrer).hostname : null;
             console.debug('[DEBUG] Domínio do documento pai:', parentDocumentDomain);
             
-            // Verifica se o Origin-Agent-Cluster está ativado
             const originAgentCluster = (window as any).originAgentCluster;
             console.debug('[DEBUG] Origin-Agent-Cluster:', originAgentCluster);
           }
@@ -177,10 +190,8 @@ export function useGeolocation() {
         
         // Solicita a localização do navegador com abordagem melhorada
         const geolocationPromise = new Promise<GeolocationPosition>((resolve, reject) => {
-          // ID do watcher para limpar após uso
           let watchId: number | null = null;
           
-          // Timer para timeout
           const timeoutId = setTimeout(() => {
             console.debug('[DEBUG] Timeout da geolocalização atingido');
             if (watchId !== null) {
@@ -229,15 +240,15 @@ export function useGeolocation() {
                 onError,
                 { 
                   maximumAge: 30000, // 30 segundos
-                  timeout: LOCATION_TIMEOUT - 10000, // 1 segundo a menos que o timeout geral
-                  enableHighAccuracy: false // Tentar obter localização de alta precisão
+                  timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
+                  enableHighAccuracy: false // Precisão moderada para equilíbrio entre exatidão e velocidade
                 }
               );
             },
             { 
               maximumAge: 60000, // 1 minuto
-              timeout: LOCATION_TIMEOUT - 10000, // 5 segundos a menos que o timeout geral
-              enableHighAccuracy: false // Tentar obter localização de alta precisão 
+              timeout: LOCATION_TIMEOUT - 10000, // 10 segundos a menos que o timeout geral
+              enableHighAccuracy: false // Precisão moderada para equilíbrio entre exatidão e velocidade
             }
           );
         });
@@ -262,6 +273,7 @@ export function useGeolocation() {
           lastAttempt: now,
           attempts: state.attempts + 1,
           cooldown: false,
+          permissionStatus,
         });
         
         console.debug('[DEBUG] Usando localização do navegador com sucesso');
@@ -281,6 +293,8 @@ export function useGeolocation() {
           switch (err.code) {
             case 1:
               errorMessage = 'Permissão negada';
+              // Atualiza o status de permissão se for erro de permissão
+              setState(prev => ({ ...prev, permissionStatus: PermissionStatus.DENIED }));
               break;
             case 2:
               errorMessage = 'Posição indisponível';
@@ -300,11 +314,21 @@ export function useGeolocation() {
       console.debug(`[DEBUG] Máximo de tentativas (${MAX_ATTEMPTS_BROWSER}) do navegador atingido, usando apenas fallback`);
     }
     
-    // Fallback - usar IP
+    // Utiliza o fallback se a geolocalização do navegador falhar
+    await useFallbackLocation(now);
+    
+  }, [state.latitude, state.longitude, state.loading, state.lastAttempt, state.attempts, state.cooldown, state.permissionStatus, checkPermissionStatus]);
+
+  /**
+   * Função auxiliar para utilizar a localização de fallback (baseada em IP)
+   * @param now Timestamp atual
+   */
+  const useFallbackLocation = async (now: number) => {
     try {
       const fallback = await getLocationByIP();
       if (fallback) {
-        setState({
+        setState(prev => ({
+          ...prev,
           latitude: fallback.latitude,
           longitude: fallback.longitude,
           error: null,
@@ -317,14 +341,14 @@ export function useGeolocation() {
           heading: null,
           speed: null,
           lastAttempt: now,
-          attempts: state.attempts + 1,
+          attempts: prev.attempts + 1,
           cooldown: false,
-        });
-        console.debug('[DEBUG] Usando localização padrão com sucesso');
+        }));
+        console.debug('[DEBUG] Usando localização por IP com sucesso');
       } else {
         setState(prev => ({
           ...prev,
-          error: 'Erro ao obter localização',
+          error: 'Erro ao obter localização por IP',
           loading: false,
           cooldown: false
         }));
@@ -332,22 +356,30 @@ export function useGeolocation() {
     } catch (err) {
       setState(prev => ({
         ...prev,
-        error: 'Erro no fallback',
+        error: 'Erro no sistema de fallback',
         loading: false,
         cooldown: false
       }));
     }
-  }, [state.latitude, state.longitude, state.loading, state.lastAttempt, state.attempts, state.cooldown]);
+  };
 
+  // Efeito para inicializar a geolocalização ao montar o componente
   useEffect(() => {
-    // Inicializa a geolocalização imediatamente
-    requestGeolocation();
+    const initGeolocation = async () => {
+      // Verifica o status da permissão antes de tentar acessar a geolocalização
+      const permissionStatus = await checkPermissionStatus();
+      setState(prev => ({ ...prev, permissionStatus }));
+      
+      // Solicita geolocalização
+      requestGeolocation();
+    };
     
-    // Limpa o estado de cooldown caso a componente seja desmontada
+    initGeolocation();
+    
     return () => {
       // Limpeza caso seja necessário
     };
-  }, [requestGeolocation]);
+  }, [checkPermissionStatus, requestGeolocation]);
 
   return {
     ...state,
