@@ -6,7 +6,7 @@ interface GeolocationState {
   longitude: number | null;
   error: string | null;
   loading: boolean;
-  source: 'browser' | 'ip' | null;
+  source: 'browser' | 'ip' | 'custom' | null;
   errorCode?: number;
   timestamp?: number;
   accuracy?: number;
@@ -586,8 +586,34 @@ export function useGeolocation() {
     };
   }, [checkPermissionStatus, requestGeolocation, useFallbackLocation]);
 
+  // Função para definir uma localização personalizada
+  const setCustomLocation = useCallback((lat: number, lng: number, addressOrCep?: string) => {
+    console.debug('[DEBUG] Definindo localização personalizada:', { lat, lng, addressOrCep });
+    
+    setState(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      loading: false,
+      error: null,
+      source: 'custom', // Nova fonte: 'custom'
+      addressLine: addressOrCep || 'Localização personalizada',
+      lastAttempt: Date.now(),
+      cooldown: true, // Ativa cooldown após mudar localização
+    }));
+    
+    // Inicia timer para remover cooldown após 5 segundos
+    setTimeout(() => {
+      setState(prev => ({
+        ...prev,
+        cooldown: false
+      }));
+    }, 5000);
+  }, []);
+
   return {
     ...state,
     requestGeolocation,
+    setCustomLocation,
   };
 }

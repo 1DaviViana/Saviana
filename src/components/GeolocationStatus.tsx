@@ -90,32 +90,194 @@ export function GeolocationStatus() {
     return null;
   }
 
-  return (
-    <div
-      className="flex justify-center items-center mt-1 mb-6"
-      // Acessibilidade: Informa que a região contém status e que atualizações devem ser anunciadas
-      role="status"
-      aria-live="polite"
-    >
-      <div className="relative inline-flex items-center">
-        {/* Indicador visual (círculo colorido) */}
-        <div
-          className={`
-            ${statusColor}
-            w-2 h-2           
-            rounded-full      
-            transition-colors duration-300 
-            ${loading ? 'animate-pulse' : ''} 
-          `}
-          aria-hidden="true" // Esconde o círculo decorativo de leitores de tela
-        />
+  // Função para buscar localização por CEP
+  const handleLocationFromCep = async () => {
+    if (!cep) return;
 
-        {/* Texto minimalista ao lado do indicador (fonte reduzida para 8px) */}
-        <span className="ml-1.5 text-[8px] text-gray-500 select-none"> 
-          {statusText}
-        </span>
+    try {
+      // Limpar o CEP para ficar apenas com números
+      const cleanCep = cep.replace(/\D/g, '');
+      
+      // Validar o CEP (deve ter 8 dígitos)
+      if (cleanCep.length !== 8) {
+        console.error('CEP inválido');
+        return;
+      }
+      
+      // Endpoint do ViaCEP - API pública e gratuita para consulta de CEPs brasileiros
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        console.error('CEP não encontrado');
+        return;
+      }
+      
+      // Buscar as coordenadas do endereço usando a API Nominatim do OpenStreetMap
+      // Esta é uma API de geocoding gratuita que não requer API key
+      const geocodeResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?street=${data.logradouro}&city=${data.localidade}&state=${data.uf}&country=Brazil&format=json&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'Saviana Location Search App' // Nominatim requer um User-Agent
+          }
+        }
+      );
+      
+      const geocodeData = await geocodeResponse.json();
+      
+      if (geocodeData && geocodeData.length > 0) {
+        const { lat, lon } = geocodeData[0];
+        
+        // Formatamos o endereço para display
+        const addressDisplay = `${data.logradouro}, ${data.bairro}, ${data.localidade}-${data.uf}`;
+        
+        // Chamamos a função de set custom location
+        setCustomLocation(parseFloat(lat), parseFloat(lon), addressDisplay);
+        
+        // Fechamos o diálogo
+        setDialogOpen(false);
+      } else {
+        console.error('Não foi possível obter as coordenadas para este CEP');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar localização:', error);
+    }
+  };
+  
+  // Função para buscar localização por endereço
+  const handleLocationFromAddress = async () => {
+    if (!address) return;
+    
+    try {
+      // Buscar as coordenadas do endereço usando a API Nominatim do OpenStreetMap
+      const geocodeResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'Saviana Location Search App' // Nominatim requer um User-Agent
+          }
+        }
+      );
+      
+      const geocodeData = await geocodeResponse.json();
+      
+      if (geocodeData && geocodeData.length > 0) {
+        const { lat, lon, display_name } = geocodeData[0];
+        
+        // Chamamos a função de set custom location
+        setCustomLocation(parseFloat(lat), parseFloat(lon), display_name);
+        
+        // Fechamos o diálogo
+        setDialogOpen(false);
+      } else {
+        console.error('Não foi possível obter as coordenadas para este endereço');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar localização:', error);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="flex justify-center items-center mt-1 mb-6"
+        // Acessibilidade: Informa que a região contém status e que atualizações devem ser anunciadas
+        role="status"
+        aria-live="polite"
+        onClick={() => setDialogOpen(true)}
+      >
+        <div className="relative inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity">
+          {/* Indicador visual (círculo colorido) */}
+          <div
+            className={`
+              ${statusColor}
+              w-2 h-2           
+              rounded-full      
+              transition-colors duration-300 
+              ${loading ? 'animate-pulse' : ''} 
+            `}
+            aria-hidden="true" // Esconde o círculo decorativo de leitores de tela
+          />
+
+          {/* Texto minimalista ao lado do indicador (fonte reduzida para 8px) */}
+          <span className="ml-1.5 text-[8px] text-gray-500 select-none"> 
+            {statusText}
+          </span>
+        </div>
       </div>
-    </div>
+      
+      {/* Diálogo para definir localização personalizada */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Definir localização</DialogTitle>
+            <DialogDescription>
+              Digite seu CEP ou endereço para buscarmos estabelecimentos próximos de você.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="cep" className="text-right text-sm font-medium col-span-1">
+                CEP
+              </label>
+              <div className="col-span-3 flex gap-2">
+                <Input
+                  id="cep"
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  placeholder="Ex: 01310-200"
+                  className="col-span-2"
+                  maxLength={9}
+                />
+                <Button 
+                  onClick={handleLocationFromCep}
+                  className="whitespace-nowrap"
+                  size="sm"
+                >
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Buscar
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="address" className="text-right text-sm font-medium col-span-1">
+                Endereço
+              </label>
+              <div className="col-span-3 flex gap-2">
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Ex: Av Paulista, São Paulo, SP"
+                  className="col-span-2"
+                />
+                <Button 
+                  onClick={handleLocationFromAddress}
+                  className="whitespace-nowrap"
+                  size="sm"
+                >
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Buscar
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="sm:justify-start">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
