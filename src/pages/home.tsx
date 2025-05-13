@@ -117,9 +117,6 @@ export default function Home() {
       hasResponded: false,
     });
 
-    // Timestamp para esta busca específica
-    const searchId = Date.now();
-
     try {
       console.log("[DEBUG] Enviando busca com:", { 
         query, 
@@ -139,68 +136,46 @@ export default function Home() {
       };
       
       setDebugLogs(prevLogs => [logEntry, ...prevLogs]);
-
+      
+      // Variável para controlar se já recebemos os resultados reais
+      let realResultsReceived = false;
+      
       // Criar um controller para abortar requisições se necessário
       const controller = new AbortController();
       
-      // Timeout para simular resultados parciais (apenas para demonstração da UI)
-      // NOTA: Normalmente isso seria implementado no backend com streaming real
-      let firstBatchReceived = false;
-      // Variáveis de controle para o timer e limpeza
-      let timerCleanupFunction: (() => void) | null = null;
-      
-      // Função para simular resultados iniciais após 700ms
-      const startInitialResultsTimer = () => {
-        // Iniciar o timer para mostrar resultados preliminares
-        const timer = setTimeout(() => {
-          if (!firstBatchReceived) {
-            // Simula o primeiro conjunto de resultados chegando
-            console.log("[DEBUG] Simulando primeiro lote de resultados");
-            
-            // Gerar alguns resultados iniciais aleatórios para demonstrar a UI
-            const mockPartialResults: SearchResponse = {
-              needsClarification: false,
-              results: [
-                {
-                  category: "local",  // O schema define isso como um enum
-                  name: "Resultado preliminar local",
-                  address: "Carregando endereço...",
-                  distance: "Calculando...",
-                  hasProduct: Math.random() > 0.5,
-                  location: {
-                    lat: latitude || -23.55,
-                    lng: longitude || -46.63
-                  }
+      // Iniciamos um timer para mostrar resultados parciais rápidos (simulando streaming)
+      const quickResultsTimer = setTimeout(() => {
+        // Só mostramos resultados parciais se ainda não temos os resultados reais
+        if (!realResultsReceived) {
+          console.log("[DEBUG] Mostrando resultados parciais rápidos");
+          
+          // Criar um resultado parcial para melhorar a experiência do usuário
+          const partialResults: SearchResponse = {
+            needsClarification: false,
+            results: [
+              {
+                category: "local", 
+                name: "Buscando estabelecimentos próximos...",
+                address: "Aguarde um momento",
+                distance: "Calculando distâncias...",
+                hasProduct: true,
+                location: {
+                  lat: latitude || -23.55,
+                  lng: longitude || -46.63
                 }
-              ]
-            };
-            
-            // Atualizar estado com resultados parciais
-            setSearchState(prev => ({
-              loading: true, // ainda está carregando
-              results: mockPartialResults
-            }));
-          }
-        }, 700); // Mostrar resultados parciais após 700ms
-        
-        // Retornar função de limpeza
-        return () => {
-          clearTimeout(timer);
-        };
-      };
-      
-      // Iniciar o timer e guardar a função de limpeza
-      timerCleanupFunction = startInitialResultsTimer();
-      
-      // Função para limpar recursos quando a busca termina
-      const cleanup = () => {
-        if (timerCleanupFunction) {
-          timerCleanupFunction();
+              }
+            ]
+          };
+          
+          // Atualizar o estado com resultados parciais
+          setSearchState({
+            loading: true, // ainda carregando
+            results: partialResults
+          });
         }
-        controller.abort();
-        firstBatchReceived = true;
-      };
+      }, 600); // Mostrar algo rápido após 600ms
 
+      // Fazemos a requisição real para o backend
       const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -211,14 +186,10 @@ export default function Home() {
         }),
         signal: controller.signal
       });
-
-      // Marca que recebemos a resposta real
-      firstBatchReceived = true;
       
-      // Garantimos que o timer seja limpo quando recebemos a resposta real
-      if (timerCleanupFunction) {
-        timerCleanupFunction();
-      }
+      // Marcar que recebemos os resultados reais e limpar o timer
+      realResultsReceived = true;
+      clearTimeout(quickResultsTimer);
 
       if (!response.ok) {
         throw new Error("Search failed");
@@ -226,80 +197,57 @@ export default function Home() {
 
       const data: SearchResponse = await response.json();
       
-      // Log para garantir que o estado está sendo atualizado corretamente
-      console.log("[DEBUG] Dados recebidos, atualizando estado...");
+      console.log("[DEBUG] Dados completos recebidos, atualizando estado...");
       
-      // Adiciona os dados à caixa de log 
+      // Adicionar logs para debug
       const now = new Date().toISOString();
       if (data.needsClarification) {
+        // Log para solicitação de clarificação
         setDebugLogs(prevLogs => [
           {
             timestamp: now,
             source: 'OpenAI',
-            data: data._debug || { message: 'Necessita clarificação, mas sem dados de debug' }
+            data: data._debug || { message: 'Solicitando clarificação' }
           },
           ...prevLogs
         ]);
+        
+        console.log("[DEBUG] Necessita clarificação, mostrando pergunta");
+        
+        // Atualizar estado para não mostrar mais o carregamento
+        setSearchState({ loading: false, results: null });
+        
+        // Mostrar a pergunta de clarificação para o usuário
+        setConversation({
+          visible: true,
+          question: data.clarificationQuestion || "Pode fornecer mais detalhes sobre sua busca?",
+          userResponse: "",
+          hasResponded: false,
+        });
       } else {
-        // Para resultados finais, adiciona logs tanto do OpenAI quanto do Google Places
+        // Log para resultados finais
         setDebugLogs(prevLogs => [
           {
             timestamp: now,
             source: 'API Response',
-            data: data._debug || { message: 'Sem dados de debug' }
+            data: data._debug || { message: 'Resultados recebidos' }
           },
-          // Busca e adiciona metadata que contém dados da API
-          ...(data.results ? [{
+          // Adicionar metadados detalhados quando disponíveis
+          ...(data.results?.length > 0 && data.results[0].metadata?._debugAll ? [{
             timestamp: now,
-            source: 'Resultados Detalhados',
-            data: data.results.length > 0 && data.results[0].metadata?._debugAll 
-              ? data.results[0].metadata._debugAll 
-              : { message: 'Sem dados detalhados de debug' }
+            source: 'Detalhes',
+            data: data.results[0].metadata._debugAll
           }] : []),
           ...prevLogs
         ]);
-      }
-
-      // Limpar os recursos (timer e controller) após receber a resposta
-      cleanup();
-      
-      if (data.needsClarification && data.clarificationQuestion) {
-        console.log("[DEBUG] Necessita clarificação, parando carregamento");
         
-        // Primeiro atualizar o estado de loading para false, garantindo que ele realmente mude
-        setSearchState({ loading: false, results: null });
+        console.log("[DEBUG] Resultados completos recebidos, atualizando interface");
         
-        // Pequeno timeout para garantir que o estado de loading foi atualizado
-        setTimeout(() => {
-          // Depois mostrar a conversação (usando casting para string para satisfazer TypeScript)
-          setConversation({
-            visible: true,
-            question: (data.clarificationQuestion as string) || "Pode nos fornecer mais detalhes?",
-            userResponse: "",
-            hasResponded: false,
-          });
-        }, 50);
-      } else {
-        console.log("[DEBUG] Resultados completos recebidos, atualizando exibição incrementalmente");
-        
-        // Se já tínhamos resultados parciais, mesclamos com os novos gradualmente para uma transição suave
-        setSearchState(prev => {
-          // Verificamos se já temos alguns resultados parciais
-          if (prev.results?.results?.length) {
-            console.log("[DEBUG] Mesclando resultados parciais com resultados finais");
-            
-            // Combinamos os resultados anteriores com os novos
-            return { 
-              loading: false, 
-              results: data 
-            };
-          } else {
-            // Caso não tenhamos resultados parciais anteriores
-            return { 
-              loading: false, 
-              results: data 
-            };
-          }
+        // Atualizar o estado com os resultados finais
+        // Se já havia resultados parciais, esta atualização fará uma transição suave
+        setSearchState({
+          loading: false, // carregamento concluído
+          results: data    // resultados finais
         });
       }
     } catch (error) {
@@ -338,6 +286,44 @@ export default function Home() {
       
       setDebugLogs(prevLogs => [logEntry, ...prevLogs]);
 
+      // Variável para controlar se já recebemos os resultados reais
+      let realResultsReceived = false;
+      
+      // Criar um controller para abortar requisições se necessário
+      const controller = new AbortController();
+      
+      // Iniciamos um timer para mostrar resultados parciais rápidos
+      const quickResultsTimer = setTimeout(() => {
+        // Só mostramos resultados parciais se ainda não temos os resultados reais
+        if (!realResultsReceived) {
+          console.log("[DEBUG] Mostrando resultados parciais para resposta do usuário");
+          
+          // Criar um resultado parcial para melhorar a experiência do usuário
+          const partialResults: SearchResponse = {
+            needsClarification: false,
+            results: [
+              {
+                category: "local", 
+                name: "Processando sua resposta...",
+                address: "Buscando resultados relacionados",
+                distance: "Calculando...",
+                hasProduct: true,
+                location: {
+                  lat: latitude || -23.55,
+                  lng: longitude || -46.63
+                }
+              }
+            ]
+          };
+          
+          // Atualizar o estado com resultados parciais
+          setSearchState({
+            loading: true, // ainda carregando
+            results: partialResults
+          });
+        }
+      }, 600); // Mostrar algo rápido após 600ms
+
       const searchResponse = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -347,7 +333,12 @@ export default function Home() {
           latitude,
           longitude,
         }),
+        signal: controller.signal
       });
+      
+      // Marcar que recebemos os resultados reais e limpar o timer
+      realResultsReceived = true;
+      clearTimeout(quickResultsTimer);
 
       if (!searchResponse.ok) {
         throw new Error("Search with response failed");
@@ -355,7 +346,6 @@ export default function Home() {
 
       const data: SearchResponse = await searchResponse.json();
       
-      // Log para garantir que o estado está sendo atualizado corretamente
       console.log("[DEBUG] Dados da resposta recebidos, atualizando estado...");
       
       // Adiciona logs das respostas finais após clarificação
@@ -364,29 +354,24 @@ export default function Home() {
         {
           timestamp: now,
           source: 'API Response (após clarificação)',
-          data: data._debug || { message: 'Sem dados de debug' }
+          data: data._debug || { message: 'Resultados processados' }
         },
-        // Busca e adiciona metadata que contém dados da API
-        ...(data.results ? [{
+        // Busca e adiciona metadata que contém dados da API quando disponível
+        ...(data.results && data.results.length > 0 && data.results[0]?.metadata?._debugAll ? [{
           timestamp: now,
           source: 'Resultados Detalhados',
-          data: data.results.length > 0 && data.results[0].metadata?._debugAll 
-            ? data.results[0].metadata._debugAll 
-            : { message: 'Sem dados detalhados de debug' }
+          data: data.results[0].metadata._debugAll
         }] : []),
         ...prevLogs
       ]);
       
-      console.log("[DEBUG] Resultados da clarificação recebidos, parando carregamento");
+      console.log("[DEBUG] Resultados da clarificação recebidos");
       
-      // Primeiro garantir que o loading é removido
-      setSearchState(prev => ({ ...prev, loading: false }));
-      
-      // Pequeno timeout para garantir que o estado de loading foi atualizado
-      setTimeout(() => {
-        // Depois atualizar os resultados
-        setSearchState({ loading: false, results: data });
-      }, 50);
+      // Atualizar o estado com os resultados finais
+      setSearchState({
+        loading: false,
+        results: data
+      });
     } catch (error) {
       console.error("Search with response error:", error);
       setSearchState({ loading: false, results: null });
