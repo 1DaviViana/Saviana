@@ -34,11 +34,33 @@ jobs:
       - name: Install dependencies
         run: npm ci # Usando 'ci' para consistência, certifique-se que package-lock.json está no repo
 
+      - name: Run directory sync script
+        run: |
+          echo "==> Verificando estrutura de diretórios antes da sincronização:"
+          find . -type d -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "*/.git/*" | sort
+
+          echo "==> Definindo permissões do script de sincronização:"
+          chmod +x ./scripts/sync-src-folders.sh
+          
+          echo "==> Executando script de sincronização src/ para client/src/:"
+          ./scripts/sync-src-folders.sh
+
       - name: Build Frontend
         env:
           VITE_API_URL: https://web-production-76420.up.railway.app
           VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
+          echo "==> Verificando conteúdo de alterações cruciais antes do build:"
+          
+          echo "==> Conteúdo de client/src/App.tsx (contém botão Saviana):"
+          cat client/src/App.tsx || echo "ERRO: Arquivo não encontrado!"
+          
+          echo "==> Conteúdo de client/src/components/GeolocationStatus.tsx (contém indicador visual):"
+          cat client/src/components/GeolocationStatus.tsx || echo "ERRO: Arquivo não encontrado!"
+          
+          echo "==> Conteúdo de client/src/lib/geo-fallback.ts (contém variável de ambiente para API):"
+          cat client/src/lib/geo-fallback.ts || echo "ERRO: Arquivo não encontrado!"
+          
           echo "==> Iniciando build do Vite..."
           # Removida a flag --force inválida. --debug ainda está presente.
           npx vite build --base=/Saviana/ --debug
@@ -54,6 +76,21 @@ jobs:
           else
             echo "AVISO: dist/public/index.html não encontrado."
           fi
+          
+          echo "==> Verificando presença dos componentes no bundle JavaScript:"
+          if [ -f dist/public/assets/*.js ]; then
+            echo "Verificando presença do botão Saviana no bundle JS:"
+            grep -i "saviana" dist/public/assets/*.js || echo "AVISO: Botão 'Saviana' não encontrado no bundle!"
+            
+            echo "Verificando presença do componente GeolocationStatus no bundle JS:"
+            grep -i "geolocationstatus" dist/public/assets/*.js || echo "AVISO: Componente 'GeolocationStatus' não encontrado no bundle!"
+            
+            echo "Verificando variáveis de ambiente no bundle JS:"
+            grep -i "VITE_GOOGLE_PLACES_API_KEY" dist/public/assets/*.js || echo "AVISO: Variável VITE_GOOGLE_PLACES_API_KEY não encontrada no bundle!"
+          else
+            echo "AVISO: Arquivos JavaScript não encontrados em dist/public/assets/"
+          fi
+          
           echo "==> Verificação do index.html e assets concluída."
 
       - name: Deploy to GitHub Pages

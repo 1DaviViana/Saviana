@@ -7,14 +7,10 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 
-// This script will be added to index.html to handle GitHub Pages SPA routing
-// It rewriteS the URL path for GitHub Pages deployment
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/Saviana" component={Home} />
-      <Route path="/Saviana/" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,5 +27,4 @@ function App() {
   );
 }
 
-export default App;  
-
+export default App;

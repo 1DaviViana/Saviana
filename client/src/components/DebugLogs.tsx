@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { ScrollArea } from "../components/ui/scroll-area";
+import React, { useState } from 'react';
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface LogEntry {
   timestamp: string;
