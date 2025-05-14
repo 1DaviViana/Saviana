@@ -65,10 +65,19 @@ export async function getLocationByIP(): Promise<LocationResponse | null> {
 export async function getNearestAddress(latitude: number, longitude: number): Promise<string | undefined> {
   try {
     // Usa Reverse Geocoding da API do Google Maps para obter o endereço
+    const googleApiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+    
+    // Verificar se a chave API está disponível
+    if (!googleApiKey) {
+      console.warn('[AVISO] Chave API do Google Maps não encontrada nas variáveis de ambiente.');
+      // Retornar endereço padrão se não conseguir acessar a API
+      return DEFAULT_COORDINATES.addressLine;
+    }
+    
     const response = await googleMapsClient.reverseGeocode({
       params: {
         latlng: { lat: latitude, lng: longitude },
-        key: 'AIzaSyA5YORj7HlZUQ7Ftafulh05Z6cvLk3qvr4',
+        key: googleApiKey,
         language: undefined,
         result_type: [],
       }
