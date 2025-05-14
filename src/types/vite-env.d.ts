@@ -4,7 +4,8 @@ import { ServerOptions as OriginalServerOptions } from 'vite';
 
 interface ImportMetaEnv {
   readonly VITE_GOOGLE_PLACES_API_KEY: string;
-  // Add other environment variables as needed
+  readonly VITE_API_URL: string;
+  // adicione outras variáveis de ambiente aqui
 }
 
 interface ImportMeta {
