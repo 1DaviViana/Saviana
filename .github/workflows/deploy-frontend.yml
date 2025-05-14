@@ -7,7 +7,7 @@ on:
     paths:
       - 'client/**'
       - 'shared/**'
-      - '.github/workflows/deploy-frontend.yml' # Monitora a si mesmo para mudanças
+      - '.github/workflows/deploy-frontend.yml' # Este arquivo
       - 'package.json'
       - 'vite.config.ts'
 
@@ -16,38 +16,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          # Profundidade do histórico para garantir todas as modificações necessárias
-          fetch-depth: 0
+        uses: actions/checkout@v4 # Atualizado para v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Atualizado para v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'npm' 
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci # Usando 'ci' para consistência, certifique-se que package-lock.json está no repo
 
       - name: Build Frontend
         env:
-          # Chave para o backend (Railway)
           VITE_API_URL: https://web-production-76420.up.railway.app
-          # Chave para o Google Maps JavaScript API (frontend)
           VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
         run: |
-          # Executa o comando vite build com a base correta
-          npx vite build --base=/Saviana/
+          echo "==> Iniciando build do Vite..."
+          # Removida a flag --force inválida. --debug ainda está presente.
+          npx vite build --base=/Saviana/ --debug
+          echo "==> Build do Vite concluído."
+          
+          echo "==> Verificando o conteúdo de dist/public após o build:"
+          echo "Listando conteúdo de dist/public:"
+          ls -R dist/public 
+          
+          echo "Conteúdo do index.html gerado em dist/public/index.html:"
+          if [ -f dist/public/index.html ]; then
+            grep -E 'rel="stylesheet" href="/Saviana/assets/|src="/Saviana/assets/' dist/public/index.html
+          else
+            echo "AVISO: dist/public/index.html não encontrado."
+          fi
+          echo "==> Verificação do index.html e assets concluída."
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # A pasta que o Vite constrói
-          folder: dist/public
-          # O branch para onde será feito o deploy
           branch: gh-pages
-          # Forçar push mesmo se o branch remoto tiver mudanças não incorporadas localmente
-          force: true
-          # Token necessário para ter as permissões corretas
-          token: ${{ secrets.GITHUB_TOKEN }}
+          folder: dist/public 

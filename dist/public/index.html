@@ -3,40 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    
-    <!-- Permissões configuradas para priorizar geolocalização -->
-    <meta http-equiv="Permissions-Policy" content="geolocation=*, accelerometer=(), camera=(), microphone=()" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=*, camera=(), microphone=()" />
     <meta http-equiv="Feature-Policy" content="geolocation *" />
-    
-    <!-- Headers de segurança mais flexíveis para geolocalização e Google Maps -->
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none" />
-    <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none" />
-    
-    <!-- Headers para melhorar compatibilidade com Google Maps e geolocalização -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.gstatic.com;
-      connect-src 'self' https: http:;
-      img-src 'self' data: https: https://*.googleapis.com https://*.gstatic.com;
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
-      worker-src 'self' blob:;
-      child-src 'self' blob:;
-      frame-src 'self';
-    ">
-    
-    <!-- Cache curto para atualizar as permissões regularmente -->
-    <meta http-equiv="Cache-Control" content="max-age=3600" />
-    
-    <!-- Configuração específica para iframe em Railway/GitHub -->
-    <meta name="referrer" content="no-referrer-when-downgrade" />
-    
-    <!-- Carregando Google Maps API diretamente no head -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA5YORj7HlZUQ7Ftafulh05Z6cvLk3qvr4&libraries=places"></script>
-    
+    <!-- Meta tags específicas para iframes e permissões -->
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
     <!-- O Vite irá injetar o <link rel="stylesheet"> aqui durante o build -->
-    <script type="module" crossorigin src="/Saviana/assets/index-BmVomvGj.js"></script>
-    <link rel="stylesheet" crossorigin href="/Saviana/assets/index-FF2S2q24.css">
+    <script type="module" crossorigin src="/assets/index-CiqgdtJV.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-FF2S2q24.css">
   </head>
   <body>
     <div id="root"></div>

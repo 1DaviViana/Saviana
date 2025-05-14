@@ -8,8 +8,6 @@ import { useGeolocation } from "../hooks/use-geolocation";
 import { SearchResponse, SearchRequest } from "../../../shared/schema";
 // Importação direta do UserCreditsDisplay
 import UserCreditsDisplay from "../components/UserCreditsDisplay";
-// Importa o componente de informações de deployment
-import { DeploymentInfo } from "../components/DeploymentInfo";
 // *** IMPORTA A FUNÇÃO DA API ***
 import { searchPlaces } from "../lib/api";
 
@@ -214,9 +212,6 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-primary">Saviana</h1>
         </div>
       </header>
-      
-      {/* Componente para exibir informações de deployment - útil para debug */}
-      <DeploymentInfo />
 
       <SearchBar onSearch={handleSearch} />
 
