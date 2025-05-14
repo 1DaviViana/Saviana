@@ -1,5 +1,5 @@
 // server/index.ts
-import express3 from "express";
+import express2 from "express";
 import cors from "cors";
 
 // server/routes.ts
@@ -1067,27 +1067,32 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var isProduction = process.env.NODE_ENV === "production";
 var isReplit = process.env.REPL_ID !== void 0;
-var isGitHubPages = process.env.DEPLOY_TARGET === "github";
 var vite_config_default = defineConfig(async () => ({
-  base: isGitHubPages ? "/Saviana/" : "/",
-  // Corrige o caminho base para Railway
+  // Deixe a base como '/' por padrão.
+  // A flag --base=/Saviana/ no workflow cuidará do deploy no GitHub Pages.
+  base: "/",
   plugins: [
     react(),
     runtimeErrorOverlay(),
+    // Lógica para o plugin cartographer em ambiente de desenvolvimento Replit
     ...!isProduction && isReplit ? [
       (await import("@replit/vite-plugin-cartographer")).cartographer()
     ] : []
   ],
   resolve: {
     alias: {
+      // Mantém seus aliases
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
       "@assets": path.resolve(__dirname, "attached_assets")
     }
   },
+  // Aponta para a raiz do seu código de cliente
   root: path.resolve(__dirname, "client"),
   build: {
+    // Define o diretório de saída do build
     outDir: path.resolve(__dirname, "dist/public"),
+    // Limpa o diretório de saída antes de cada build
     emptyOutDir: true
   }
 }));
@@ -1149,86 +1154,21 @@ async function setupVite(app2, server) {
   });
 }
 
-// server/staticServe.ts
-import express2 from "express";
-import fs2 from "fs";
-import path3 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
-var __filename2 = fileURLToPath2(import.meta.url);
-var __dirname2 = path3.dirname(__filename2);
-var resolvedCwd = (() => {
-  try {
-    const cwd = process.cwd();
-    return typeof cwd === "string" && cwd ? cwd : void 0;
-  } catch (e) {
-    console.error("\u274C Error getting process.cwd():", e.message);
-    return void 0;
-  }
-})();
-console.log(`[StaticServe Init Debug] __dirname: "${__dirname2}", process.cwd(): "${resolvedCwd}"`);
-function serveStaticProd(app2) {
-  try {
-    const possiblePaths = [
-      path3.resolve(__dirname2, "../dist/public"),
-      path3.resolve(__dirname2, "../public"),
-      path3.resolve(__dirname2, "../../public")
-    ];
-    if (resolvedCwd) {
-      possiblePaths.push(
-        path3.resolve(resolvedCwd, "dist/public"),
-        path3.resolve(resolvedCwd, "public")
-      );
-    }
-    console.log("[StaticServe Debug] Checking static directories:", possiblePaths);
-    const distPath = possiblePaths.find((p) => {
-      try {
-        const stat = fs2.statSync(p);
-        return stat.isDirectory();
-      } catch {
-        return false;
-      }
-    });
-    if (!distPath) {
-      console.warn("\u26A0\uFE0F [StaticServe]: No valid static directory found. Skipping static file serving.");
-      return;
-    }
-    console.log(`\u{1F4C1} [StaticServe] Serving static files from: ${distPath}`);
-    app2.use(express2.static(distPath));
-    const indexPath = path3.join(distPath, "index.html");
-    if (fs2.existsSync(indexPath)) {
-      app2.use("*", (_req, res) => {
-        res.sendFile(indexPath);
-      });
-    } else {
-      console.warn(`\u26A0\uFE0F [StaticServe]: index.html not found at ${indexPath}`);
-    }
-  } catch (error) {
-    console.error("\u274C Error in serveStaticProd:", {
-      message: error.message,
-      stack: error.stack,
-      code: error.code,
-      name: error.name
-    });
-    console.warn("[StaticServe] Proceeding without static file serving.");
-  }
-}
-
 // server/index.ts
-import { fileURLToPath as fileURLToPath3 } from "url";
-import path4 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+import path3 from "path";
 if (import.meta && typeof import.meta.url === "string") {
   if (typeof import.meta.dirname !== "string" || !import.meta.dirname) {
     try {
-      const __filename3 = fileURLToPath3(import.meta.url);
-      const __dirname3 = path4.dirname(__filename3);
+      const __filename2 = fileURLToPath2(import.meta.url);
+      const __dirname2 = path3.dirname(__filename2);
       Object.defineProperty(import.meta, "dirname", {
-        value: __dirname3,
+        value: __dirname2,
         writable: false,
-        // geralmente polyfills são não-reescritos
         enumerable: true,
         configurable: true
       });
-      console.log(`[Polyfill] Adicionado import.meta.dirname = ${__dirname3}`);
+      console.log(`[Polyfill] Adicionado import.meta.dirname = ${__dirname2}`);
     } catch (e) {
       console.warn(`[Polyfill] Falha ao criar import.meta.dirname a partir de import.meta.url (${import.meta.url}):`, e);
     }
@@ -1273,15 +1213,13 @@ var corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  // Adicionar outros métodos se necessário
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
-  // Adicionar outros headers se necessário
 };
-var app = express3();
+var app = express2();
 app.set("trust proxy", 1);
 app.use(cors(corsOptions));
-app.use(express3.json());
-app.use(express3.urlencoded({ extended: false }));
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -1302,7 +1240,6 @@ app.use((req, res, next) => {
     console.error("\u274C Erro capturado pelo manipulador de erros:", {
       status,
       message,
-      // Evitar logar o stack completo de erros CORS "Não permitido por CORS" para não poluir os logs
       stack: err.message && err.message.includes("N\xE3o permitido por CORS") ? "CORS rejection" : err.stack,
       path: req.path,
       method: req.method,
@@ -1324,16 +1261,12 @@ app.use((req, res, next) => {
     log("\u{1F6E0}\uFE0F Configurando Vite para desenvolvimento...");
     await setupVite(app, server);
   } else {
-    log("\u{1F4E6} Servindo arquivos est\xE1ticos para produ\xE7\xE3o...");
-    serveStaticProd(app);
+    log("\u{1F4E6} Backend em produ\xE7\xE3o. N\xE3o servindo arquivos est\xE1ticos.");
   }
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5e3;
   server.listen({
-    // O servidor HTTP (retornado por registerRoutes) é quem deve escutar
     port,
     host: "0.0.0.0"
-    // Importante para Railway e containers
-    // reusePort: true, // Geralmente não é necessário e pode causar problemas em alguns cenários. Remova se não tiver um motivo específico.
   }, () => {
     log(`\u{1F680} Servidor rodando em http://0.0.0.0:${port}`);
     if (currentEnv === "production") {
