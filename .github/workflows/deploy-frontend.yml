@@ -8,9 +8,15 @@ on:
       - 'client/**'
       - 'shared/**'
       - 'src/**'
-      - '.github/workflows/deploy-frontend.yml' # Este arquivo
+      - 'public/**'           
+      - 'scripts/**'           
+      - 'attached_assets/**'  
+      - '.env*'               
+      - '.github/workflows/deploy-frontend.yml'
       - 'package.json'
       - 'vite.config.ts'
+      - 'build-frontend.sh'   
+      - 'tsconfig.json'       
 
 jobs:
   build-and-deploy:
