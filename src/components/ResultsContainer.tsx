@@ -1,5 +1,5 @@
 import React from "react";
-import { SearchResponse } from "../../shared/schema";
+import { SearchResponse, SearchResult } from "../../shared/schema";
 import { Card, CardContent } from "./ui/card";
 import { MapPin, Flag, Globe, Link, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";
@@ -50,9 +50,9 @@ export default function ResultsContainer({ loading, results }: ResultsContainerP
   
   // Se chegou até aqui, significa que não está carregando E tem resultados para mostrar
   // Prepare os dados para renderização
-  const localResults = results?.results?.filter(r => r.category === "local") || [];
-  const nationalResults = results?.results?.filter(r => r.category === "national") || [];
-  const globalResults = results?.results?.filter(r => r.category === "global") || [];
+  const localResults = results?.results?.filter((r: SearchResult) => r.category === "local") || [];
+  const nationalResults = results?.results?.filter((r: SearchResult) => r.category === "national") || [];
+  const globalResults = results?.results?.filter((r: SearchResult) => r.category === "global") || [];
 
   const hasAnyResults = localResults.length > 0 || nationalResults.length > 0 || globalResults.length > 0;
 
