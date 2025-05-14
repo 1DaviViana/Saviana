@@ -45,6 +45,9 @@ jobs:
           echo "==> Executando script de sincronização src/ para client/src/:"
           ./scripts/sync-src-folders.sh
 
+      - name: TypeScript check
+        run: npx tsc --jsx react --esModuleInterop
+          
       - name: Build Frontend
         env:
           VITE_API_URL: https://web-production-76420.up.railway.app

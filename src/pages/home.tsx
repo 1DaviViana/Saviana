@@ -4,7 +4,27 @@ import ConversationContainer from "../components/ConversationContainer";
 import ResultsContainer from "../components/ResultsContainer";
 import DebugLogs from "../components/DebugLogs";
 import { useGeolocation } from "../hooks/use-geolocation";
-import { SearchResponse } from "../../shared/schema";
+// We'll define an inline type here to avoid import issues
+// This matches the structure in shared/schema.ts
+type SearchResponse = {
+  needsClarification: boolean;
+  clarificationQuestion?: string;
+  results?: Array<{
+    id?: number;
+    name: string;
+    category: 'local' | 'national' | 'global';
+    address?: string;
+    location?: { lat: number; lng: number };
+    website?: string;
+    rating?: string;
+    reviews?: string;
+    distance?: string;
+    price?: string;
+    hasProduct: boolean;
+    metadata?: any;
+  }>;
+  _debug?: any;
+};
 // Importação direta do UserCreditsDisplay
 import UserCreditsDisplay from "../components/UserCreditsDisplay";
 // Importação do componente de status de geolocalização

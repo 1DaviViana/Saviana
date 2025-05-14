@@ -1,3 +1,4 @@
+import { SearchRequest, SearchResponse } from "@shared/schema";
 
 export async function searchPlaces(request: SearchRequest): Promise<SearchResponse> {
   try {

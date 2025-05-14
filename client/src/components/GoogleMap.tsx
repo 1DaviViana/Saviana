@@ -2,7 +2,7 @@
 
 
 import React, { useState, useEffect } from "react";
-import { SearchResult } from "../../shared/schema";
+// Using a local interface definition instead of importing SearchResult
 import { MapPin } from "./ui/map-pin";
 
 // Definir tipos do Google Maps para evitar erros de TypeScript

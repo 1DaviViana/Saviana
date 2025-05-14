@@ -30,7 +30,7 @@ jobs:
       run: bash scripts/sync-src-folders.sh
       
     - name: TypeScript check
-      run: npm run check
+      run: npx tsc --jsx react --esModuleInterop
       
     - name: Build
       run: npm run build

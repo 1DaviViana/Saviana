@@ -1,10 +1,31 @@
 import React from "react";
-import { SearchResponse, SearchResult } from "../../shared/schema";
 import { Card, CardContent } from "./ui/card";
 import { MapPin, Flag, Globe, Link, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import GoogleMap from "./GoogleMap";
+
+// We'll define an inline type here to avoid import issues
+// This matches the structure in shared/schema.ts
+type SearchResponse = {
+  needsClarification: boolean;
+  clarificationQuestion?: string;
+  results?: Array<{
+    id?: number;
+    name: string;
+    category: 'local' | 'national' | 'global';
+    address?: string;
+    location?: { lat: number; lng: number };
+    website?: string;
+    rating?: string;
+    reviews?: string;
+    distance?: string;
+    price?: string;
+    hasProduct: boolean;
+    metadata?: any;
+  }>;
+  _debug?: any;
+};
 
 interface ResultsContainerProps {
   loading: boolean;
