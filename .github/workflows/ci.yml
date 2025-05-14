@@ -26,6 +26,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Run synchronization script
+      run: bash scripts/sync-src-folders.sh
+      
     - name: TypeScript check
       run: npm run check
       
