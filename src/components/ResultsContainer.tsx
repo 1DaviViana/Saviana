@@ -1,5 +1,5 @@
 import React from "react";
-import { SearchResponse, SearchResult } from "../../shared/schema";
+import { SearchResponse, SearchResult } from "@shared/schema";
 import { Card, CardContent } from "./ui/card";
 import { MapPin, Flag, Globe, Link, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";
