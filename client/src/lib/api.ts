@@ -1,4 +1,3 @@
-
 // Define the necessary types inline to avoid import issues
 type SearchRequest = {
   query: string;

@@ -1,8 +1,15 @@
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
-import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const AlertDialog = AlertDialogPrimitive.Root
 

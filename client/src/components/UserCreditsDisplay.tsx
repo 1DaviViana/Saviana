@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";

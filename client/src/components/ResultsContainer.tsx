@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Card, CardContent } from "./ui/card";
 import { MapPin, Flag, Globe, Link, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";

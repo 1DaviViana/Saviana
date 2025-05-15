@@ -2,8 +2,11 @@
 
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
-import { cn } from "@/lib/utils"
 
 const Drawer = ({
   shouldScaleBackground = true,

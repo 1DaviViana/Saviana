@@ -1,6 +1,9 @@
 import * as React from "react"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
-import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
   HTMLTableElement,
