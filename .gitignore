@@ -37,4 +37,4 @@ pnpm-debug.log*
 .config/
 .replit
 replit.nix
-.breakpoints
+.breakpointsclient/src/components/ui/backups
