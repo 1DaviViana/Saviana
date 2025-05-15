@@ -1,15 +1,11 @@
+"use client"
+
 import * as React from 'react';
 import { GripVertical } from "lucide-react";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
-
   return inputs.filter(Boolean).join(' ');
 }
 

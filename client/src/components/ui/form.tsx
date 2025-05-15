@@ -1,18 +1,9 @@
+"use client"
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
-import { Label } from "@/components/ui/label"
-
-// Define the cn utility function inline to avoid import issues
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
-  return inputs.filter(Boolean).join(" ");
-}
   Controller,
   FormProvider,
   useFormContext,
@@ -21,9 +12,10 @@ function cn(...inputs: any[]) {
   type FieldValues,
 } from "react-hook-form"
 
-  return inputs.filter(Boolean).join(' ');
-}
+import { Label } from "@/components/ui/label"
 
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 

@@ -1,23 +1,10 @@
 import * as React from "react"
-import useEmblaCarousel, {
+import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-  return inputs.filter(Boolean).join(" ");
-}
-  type UseEmblaCarouselType,
-} from "embla-carousel-react"
-  return inputs.filter(Boolean).join(" ");
-}
-
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
