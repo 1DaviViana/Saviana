@@ -1,18 +1,13 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
-import { ButtonProps, buttonVariants } from "@/components/ui/button"
-
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
-  return inputs.filter(Boolean).join(' ');
-}
-
+import { ButtonProps, buttonVariants } from "@/components/ui/button"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 

@@ -2,19 +2,14 @@ import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
-  return inputs.filter(Boolean).join(' ');
-}
-
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 

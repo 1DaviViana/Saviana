@@ -1,7 +1,7 @@
 // Build timestamp: 2025-05-12T10:30:00Z
 // ou
 // Build ID: 12345 
-import * as React from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { Router } from "wouter";

@@ -112,7 +112,67 @@ type SearchResponse = {\
     fi
   fi
   
-  # 4. Fix JSX component syntax if needed
+  # 4. Remove duplicate cn functions in import blocks
+  # First check for multiple cn functions
+  if [[ $(grep -c "function cn" "$file") -gt 1 ]]; then
+    echo "Fixing duplicate cn functions in $file..."
+    cp "$file" "${file}.cn_fix_backup"
+    
+    # Create a temporary file
+    tmp_file=$(mktemp)
+    
+    # Step 1: Remove all function cn declarations
+    grep -v "function cn" "$file" > "$tmp_file"
+    
+    # Step 2: Find the first import block end
+    import_end=$(grep -n "^import" "$tmp_file" | tail -1 | cut -d: -f1)
+    
+    # Insert a single cn function after imports
+    sed -i "$((import_end+2))i\\
+// Define the cn utility function inline to avoid import issues\\
+function cn(...inputs: any[]) {\\
+  return inputs.filter(Boolean).join(' ');\\
+}\\
+" "$tmp_file"
+    
+    # Copy back to the original file
+    cp "$tmp_file" "$file"
+    rm "$tmp_file"
+  fi
+
+  # 5. Fix import block issues in components with misplaced function declarations
+  if [[ $file == *".tsx" ]] || [[ $file == *".ts" ]]; then
+    # Check for function declarations in import blocks
+    if grep -q "^// Define" "$file" && grep -q "^function cn" "$file" && grep -q "import {" "$file"; then
+      echo "Fixing import block issues in $file..."
+      cp "$file" "${file}.import_fix_backup"
+      
+      # Create a temporary file
+      tmp_file=$(mktemp)
+      
+      # Step 1: Extract all import statements
+      grep "^import " "$file" > "$tmp_file"
+      
+      # Step 2: Add a blank line
+      echo "" >> "$tmp_file"
+      
+      # Step 3: Add the cn function definition
+      echo "// Define the cn utility function inline to avoid import issues" >> "$tmp_file"
+      echo "function cn(...inputs: any[]) {" >> "$tmp_file"
+      echo "  return inputs.filter(Boolean).join(' ');" >> "$tmp_file"
+      echo "}" >> "$tmp_file"
+      echo "" >> "$tmp_file"
+      
+      # Step 4: Add the rest of the file (excluding imports and cn function)
+      grep -v "^import " "$file" | grep -v "^// Define" | grep -v "^function cn" >> "$tmp_file"
+      
+      # Copy back to the original file
+      cp "$tmp_file" "$file"
+      rm "$tmp_file"
+    fi
+  fi
+
+  # 6. Fix JSX component syntax if needed
   if [[ $file == *"resizable.tsx" ]]; then
     # Convert arrow functions to regular functions with explicit React.createElement
     if grep -q "=> (" "$file"; then

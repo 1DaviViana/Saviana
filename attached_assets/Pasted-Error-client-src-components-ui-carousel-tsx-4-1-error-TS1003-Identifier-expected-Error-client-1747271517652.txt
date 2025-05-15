@@ -1,0 +1,29 @@
+Error: client/src/components/ui/carousel.tsx(4,1): error TS1003: Identifier expected.
+Error: client/src/components/ui/carousel.tsx(4,10): error TS1005: ',' expected.
+Error: client/src/components/ui/carousel.tsx(4,12): error TS1005: ',' expected.
+Error: client/src/components/ui/carousel.tsx(4,31): error TS1005: '=>' expected.
+Error: client/src/components/ui/carousel.tsx(7,28): error TS1005: '=' expected.
+Error: client/src/components/ui/carousel.tsx(8,1): error TS1128: Declaration or statement expected.
+Error: client/src/components/ui/carousel.tsx(8,3): error TS1434: Unexpected keyword or identifier.
+Error: client/src/components/ui/form.tsx(8,1): error TS1003: Identifier expected.
+Error: client/src/components/ui/form.tsx(8,10): error TS1005: ',' expected.
+Error: client/src/components/ui/form.tsx(8,12): error TS1005: ',' expected.
+Error: client/src/components/ui/form.tsx(8,31): error TS1005: '=>' expected.
+Error: client/src/components/ui/form.tsx(14,8): error TS1005: ';' expected.
+Error: client/src/components/ui/form.tsx(15,8): error TS1005: ';' expected.
+Error: client/src/components/ui/form.tsx(16,8): error TS1005: ';' expected.
+Error: client/src/components/ui/form.tsx(17,1): error TS1109: Expression expected.
+Error: client/src/components/ui/form.tsx(17,3): error TS1434: Unexpected keyword or identifier.
+Error: client/src/components/ui/sidebar.tsx(16,1): error TS1003: Identifier expected.
+Error: client/src/components/ui/sidebar.tsx(16,10): error TS1005: ',' expected.
+Error: client/src/components/ui/sidebar.tsx(16,12): error TS1005: ',' expected.
+Error: client/src/components/ui/sidebar.tsx(16,31): error TS1005: '=>' expected.
+Error: client/src/components/ui/sidebar.tsx(24,1): error TS1109: Expression expected.
+Error: client/src/components/ui/sidebar.tsx(24,3): error TS1434: Unexpected keyword or identifier.
+Error: client/src/components/ui/sidebar.tsx(28,1): error TS1003: Identifier expected.
+Error: client/src/components/ui/sidebar.tsx(28,10): error TS1005: ',' expected.
+Error: client/src/components/ui/sidebar.tsx(28,12): error TS1005: ',' expected.
+Error: client/src/components/ui/sidebar.tsx(28,31): error TS1005: '=>' expected.
+Error: client/src/components/ui/sidebar.tsx(35,1): error TS1109: Expression expected.
+Error: client/src/components/ui/sidebar.tsx(35,3): error TS1434: Unexpected keyword or identifier.
+Error: Process completed with exit code 2.
