@@ -1,8 +1,12 @@
-import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
+import * as React from "react"
 import { Check, ChevronRight, Circle } from "lucide-react"
-
 import { cn } from "../../lib/utils"
+
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 

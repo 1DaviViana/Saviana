@@ -1,10 +1,12 @@
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
+
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
+}
 
 const Tabs = TabsPrimitive.Root
 

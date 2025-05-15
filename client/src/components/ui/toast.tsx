@@ -1,9 +1,13 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
+import { cn } from "../../lib/utils"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
-import { cn } from "../../lib/utils"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const ToastProvider = ToastPrimitives.Provider
 

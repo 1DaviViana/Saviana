@@ -2,8 +2,12 @@
 
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
-
 import { cn } from "../../lib/utils"
+
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const TooltipProvider = TooltipPrimitive.Provider
 

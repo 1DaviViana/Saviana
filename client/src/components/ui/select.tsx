@@ -1,17 +1,17 @@
+"use client"
+
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Select = SelectPrimitive.Root
 

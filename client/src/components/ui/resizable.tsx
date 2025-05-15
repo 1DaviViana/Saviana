@@ -1,16 +1,16 @@
 "use client"
 
-import * as React from 'react';
-import { GripVertical } from "lucide-react";
-import * as ResizablePrimitive from "react-resizable-panels";
+import * as React from "react"
+import { GripVertical } from "lucide-react"
+import * as ResizablePrimitive from "react-resizable-panels"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
+  return inputs.filter(Boolean).join(" ")
 }
 
 function ResizablePanelGroup(props: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) {
-  const { className, ...rest } = props;
+  const { className, ...rest } = props
   return React.createElement(
     ResizablePrimitive.PanelGroup,
     {
@@ -20,18 +20,18 @@ function ResizablePanelGroup(props: React.ComponentProps<typeof ResizablePrimiti
       ),
       ...rest
     }
-  );
+  )
 }
 
 // Use the Panel directly
-const ResizablePanel = ResizablePrimitive.Panel;
+const ResizablePanel = ResizablePrimitive.Panel
 
 interface ResizableHandleProps extends React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> {
-  withHandle?: boolean;
+  withHandle?: boolean
 }
 
 function ResizableHandle(props: ResizableHandleProps) {
-  const { withHandle, className, ...rest } = props;
+  const { withHandle, className, ...rest } = props
   
   return React.createElement(
     ResizablePrimitive.PanelResizeHandle,
@@ -49,7 +49,7 @@ function ResizableHandle(props: ResizableHandleProps) {
         React.createElement(GripVertical, { className: "h-2.5 w-2.5" })
       ) : 
       null
-  );
+  )
 }
 
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle }

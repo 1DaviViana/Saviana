@@ -1,10 +1,12 @@
-import * as React from "react"
 import * as PopoverPrimitive from "@radix-ui/react-popover"
+import * as React from "react"
+
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
+}
 
 const Popover = PopoverPrimitive.Root
 

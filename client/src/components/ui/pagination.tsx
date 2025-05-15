@@ -1,19 +1,18 @@
 import * as React from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
-  return inputs.filter(Boolean).join(' ');
 }
 
-  return inputs.filter(Boolean).join(" ");
+}
+
+}
+
 }
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (

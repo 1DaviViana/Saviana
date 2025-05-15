@@ -1,16 +1,16 @@
+"use client"
+
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Drawer = ({
   shouldScaleBackground = true,

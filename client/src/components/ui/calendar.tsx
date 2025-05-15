@@ -1,20 +1,19 @@
 import * as React from "react"
+import { buttonVariants } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
-import { buttonVariants } from "@/components/ui/button"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
-  return inputs.filter(Boolean).join(' ');
 }
 
-  return inputs.filter(Boolean).join(" ");
+}
+
+}
+
 }
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>

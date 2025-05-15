@@ -1,6 +1,12 @@
+import {
 import * as React from "react";
 import { useToast } from "../../hooks/use-toast"
-import {
+
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
+
   Toast,
   ToastClose,
   ToastDescription,

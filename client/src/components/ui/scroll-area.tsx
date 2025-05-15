@@ -1,7 +1,11 @@
 import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
-
 import { cn } from "../../lib/utils"
+
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,

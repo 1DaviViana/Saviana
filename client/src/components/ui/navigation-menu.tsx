@@ -1,16 +1,16 @@
-import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
-import { cva } from "class-variance-authority"
+import * as React from "react"
 import { ChevronDown } from "lucide-react"
+import { cva } from "class-variance-authority"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,

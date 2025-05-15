@@ -1,12 +1,14 @@
 "use client"
 
-import * as React from "react"
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card"
+import * as React from "react"
+
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
+}
 
 const HoverCard = HoverCardPrimitive.Root
 

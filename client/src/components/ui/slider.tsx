@@ -1,10 +1,12 @@
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
+
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
+}
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,

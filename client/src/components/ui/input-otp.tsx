@@ -1,15 +1,15 @@
 import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
 import { Dot } from "lucide-react"
+import { OTPInput, OTPInputContext } from "input-otp"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,

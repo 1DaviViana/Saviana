@@ -1,15 +1,15 @@
-import * as React from "react"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
+import * as React from "react"
 import { ChevronDown } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Accordion = AccordionPrimitive.Root
 

@@ -1,15 +1,15 @@
-import * as React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
+import * as React from "react"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const ContextMenu = ContextMenuPrimitive.Root
 

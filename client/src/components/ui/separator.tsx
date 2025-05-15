@@ -1,10 +1,12 @@
 import * as React from "react"
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
+
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
+}
 
 const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,

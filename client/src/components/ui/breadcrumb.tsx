@@ -1,15 +1,15 @@
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { Slot } from "@radix-ui/react-slot"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,

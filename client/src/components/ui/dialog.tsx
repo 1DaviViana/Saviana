@@ -1,10 +1,14 @@
 "use client"
 
-import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import * as React from "react"
+import { cn } from "../../lib/utils"
 import { X } from "lucide-react"
 
-import { cn } from "../../lib/utils"
+// Define the cn utility function inline to avoid import issues
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}
 
 const Dialog = DialogPrimitive.Root
 

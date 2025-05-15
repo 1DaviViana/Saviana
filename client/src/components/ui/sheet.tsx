@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -5,14 +7,12 @@ import { X } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Sheet = SheetPrimitive.Root
 

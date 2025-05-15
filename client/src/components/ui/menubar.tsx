@@ -1,17 +1,17 @@
-import * as React from "react"
+"use client"
+
 import * as MenubarPrimitive from "@radix-ui/react-menubar"
+import * as React from "react"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
-"use client"
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 function MenubarMenu({
   ...props

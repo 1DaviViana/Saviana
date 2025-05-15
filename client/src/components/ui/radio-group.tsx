@@ -1,15 +1,15 @@
-import * as React from "react"
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import * as React from "react"
 import { Circle } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,

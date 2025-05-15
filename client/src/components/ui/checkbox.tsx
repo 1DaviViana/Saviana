@@ -1,15 +1,15 @@
-import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import * as React from "react"
 import { Check } from "lucide-react"
 
 // Define the cn utility function inline to avoid import issues
 function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
-
   return inputs.filter(Boolean).join(" ");
 }
 
+}
+
+}
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
