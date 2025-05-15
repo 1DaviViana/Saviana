@@ -1,0 +1,43 @@
+name: TypeScript Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'tsconfig.ci.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'tsconfig.ci.json'
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare UI Components
+        run: |
+          chmod +x scripts/fix-components-for-typechecking.sh
+          scripts/fix-components-for-typechecking.sh
+
+      - name: TypeScript Check
+        run: |
+          chmod +x scripts/ci-typecheck.sh
+          scripts/ci-typecheck.sh
